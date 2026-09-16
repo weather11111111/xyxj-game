@@ -1,0 +1,2154 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>校园历险记</title>
+<style>
+:root{
+  --gold:#ffd66b; --red:#e8564d; --blue:#5ab7ef; --jade:#5fd3a4;
+  --ink:#241a2e; --paper:#fff7ea; --purple:#8a6bd8; --dark:#171023;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{
+  font-family:"STKaiti","KaiTi","Microsoft YaHei",sans-serif;
+  background:#120b1d; color:#fff; overflow:hidden; user-select:none;
+}
+#app{position:relative;width:100vw;height:100vh;overflow:hidden}
+.screen{position:absolute;inset:0;display:none;flex-direction:column}
+.screen.active{display:flex}
+.scroll{overflow-y:auto}
+
+/* ---------- 通用 ---------- */
+.btn{
+  border:none;cursor:pointer;font-family:inherit;font-weight:bold;color:#3a2350;
+  background:linear-gradient(180deg,#ffe9a8,#f4b942);border-radius:14px;
+  padding:12px 22px;font-size:17px;letter-spacing:2px;
+  box-shadow:0 4px 0 #a6741d,0 8px 18px rgba(0,0,0,.45);transition:.12s;
+}
+.btn:hover{filter:brightness(1.08)}
+.btn:active{transform:translateY(3px);box-shadow:0 1px 0 #a6741d}
+.btn.ghost{background:linear-gradient(180deg,#d9d2ee,#9f93c6);box-shadow:0 4px 0 #5d5380,0 8px 18px rgba(0,0,0,.4);color:#fff}
+.btn.jade{background:linear-gradient(180deg,#9ff0cd,#3fbf88);box-shadow:0 4px 0 #1d7a54,0 8px 18px rgba(0,0,0,.4)}
+.btn.red{background:linear-gradient(180deg,#ff9d96,#e04a40);box-shadow:0 4px 0 #8e2b25,0 8px 18px rgba(0,0,0,.4);color:#fff}
+.btn:disabled{filter:grayscale(.7) brightness(.7);cursor:not-allowed}
+.tag{display:inline-block;padding:2px 8px;border-radius:999px;font-size:12px;background:rgba(255,255,255,.15)}
+h1,h2,h3{letter-spacing:3px}
+.empty-hint{text-align:center;opacity:.6;margin-top:40px;line-height:2}
+
+/* ---------- 主菜单 ---------- */
+#screen-menu{
+  background:
+   radial-gradient(ellipse at 50% -10%,rgba(255,214,107,.35),transparent 55%),
+   radial-gradient(ellipse at 80% 110%,rgba(138,107,216,.4),transparent 50%),
+   linear-gradient(180deg,#2a1640,#120b1d 70%);
+  align-items:center;justify-content:center;
+}
+#screen-menu::before{
+  content:"";position:absolute;inset:0;
+  background-image:radial-gradient(rgba(255,255,255,.12) 1px,transparent 1.6px);
+  background-size:34px 34px;opacity:.35;
+}
+.menu-card{position:relative;text-align:center;z-index:2;animation:floatIn .8s ease}
+@keyframes floatIn{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:none}}
+.game-title{
+  font-size:clamp(46px,9vw,104px);font-weight:900;letter-spacing:12px;
+  background:linear-gradient(180deg,#fff6d8,#ffd66b 45%,#e88b2f);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  text-shadow:0 0 40px rgba(255,200,90,.35);
+  filter:drop-shadow(0 6px 0 rgba(120,50,10,.55));
+}
+.game-sub{margin:6px 0 34px;letter-spacing:10px;color:#d9c7f5;font-size:clamp(13px,2vw,18px)}
+.menu-btns{display:flex;flex-direction:column;gap:16px;width:min(320px,70vw);margin:0 auto}
+.menu-btns .btn{font-size:19px;padding:15px}
+.menu-deco{position:absolute;font-size:40px;opacity:.85;animation:bob 3.4s ease-in-out infinite}
+@keyframes bob{0%,100%{transform:translateY(0) rotate(-6deg)}50%{transform:translateY(-16px) rotate(6deg)}}
+.topbar{
+  display:flex;align-items:center;gap:12px;padding:10px 16px;
+  background:linear-gradient(180deg,rgba(40,24,64,.95),rgba(26,15,42,.95));
+  border-bottom:2px solid rgba(255,214,107,.35);z-index:5;
+}
+.topbar .title{font-size:20px;font-weight:bold;letter-spacing:3px;color:var(--gold)}
+.topbar .spacer{flex:1}
+.pill{background:rgba(0,0,0,.35);border:1px solid rgba(255,214,107,.4);border-radius:999px;padding:5px 14px;font-size:15px}
+.currency{color:var(--gold);font-weight:bold}
+
+/* ---------- 关卡地图 ---------- */
+.zone{margin:14px 16px;background:linear-gradient(180deg,rgba(255,255,255,.08),rgba(255,255,255,.02));
+  border:1px solid rgba(255,255,255,.12);border-radius:18px;padding:12px 14px 16px}
+.zone h3{font-size:19px;margin-bottom:10px;color:var(--gold)}
+.lvl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:10px}
+.lvl-btn{aspect-ratio:1;border-radius:14px;border:2px solid rgba(255,255,255,.18);cursor:pointer;
+  font-family:inherit;font-size:18px;font-weight:bold;color:#fff;position:relative;
+  display:flex;align-items:center;justify-content:center;transition:.12s}
+.lvl-btn.done{background:linear-gradient(180deg,#5fd3a4,#2e9e72);border-color:#8ff0cb}
+.lvl-btn.cur{background:linear-gradient(180deg,#ffd66b,#e08a2c);border-color:#fff0b8;color:#3a2350;
+  animation:pulse 1.4s infinite}
+.lvl-btn.lock{background:rgba(255,255,255,.07);color:rgba(255,255,255,.35);cursor:not-allowed}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(255,214,107,.6)}50%{box-shadow:0 0 0 10px rgba(255,214,107,0)}}
+.lvl-btn .boss{position:absolute;top:-8px;right:-6px;font-size:18px}
+.lvl-btn .stars{position:absolute;bottom:2px;font-size:10px;color:#ffe08a}
+
+/* ---------- 图鉴 / 抽卡 ---------- */
+.panel-wrap{padding:14px 16px 90px}
+.char-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:14px}
+.char-card{background:linear-gradient(180deg,rgba(255,255,255,.1),rgba(0,0,0,.25));
+  border:2px solid rgba(255,255,255,.14);border-radius:16px;overflow:hidden;cursor:pointer;transition:.15s;text-align:center}
+.char-card:hover{transform:translateY(-4px);border-color:var(--gold)}
+.char-card.locked{filter:grayscale(1) brightness(.4)}
+.char-card .pic{aspect-ratio:3/4;background:#2c1f40;position:relative;overflow:hidden}
+.char-card .pic img{width:100%;height:100%;object-fit:cover}
+.char-card .nm{padding:6px 4px 8px;font-size:15px;font-weight:bold}
+.char-card .cls{font-size:12px;color:#cdbdee}
+.rarity-N{--rc:#b9c2d6} .rarity-R{--rc:#6ec3ff} .rarity-SR{--rc:#c08bff}
+.rarity-SSR{--rc:#ffc95e} .rarity-UR{--rc:#ff7a6b}
+.char-card,.skin-frame{border-color:var(--rc,#rgba(255,255,255,.14))}
+.gacha-box{text-align:center;padding:24px 16px}
+.gacha-banner{font-size:26px;color:var(--gold);letter-spacing:6px;margin-bottom:6px}
+.gacha-btns{display:flex;gap:18px;justify-content:center;margin:22px 0;flex-wrap:wrap}
+.draw-result{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px;margin-top:18px}
+.skin-card{border-radius:16px;overflow:hidden;border:3px solid;background:#241837;animation:pop .5s ease}
+@keyframes pop{from{transform:scale(.4);opacity:0}to{transform:scale(1);opacity:1}}
+.skin-card .pic{aspect-ratio:3/4;position:relative}
+.skin-card .pic img{width:100%;height:100%;object-fit:cover}
+.skin-card .info{padding:7px 9px}
+.skin-card .rname{font-weight:bold}
+.skin-card .own{font-size:11px;opacity:.7}
+.skin-card.new{box-shadow:0 0 22px var(--rc)}
+.r-badge{position:absolute;top:6px;left:6px;background:var(--rc);color:#221033;font-weight:900;
+  border-radius:8px;padding:1px 7px;font-size:12px}
+
+/* ---------- 弹窗 ---------- */
+.modal-mask{position:absolute;inset:0;background:rgba(10,5,20,.72);display:none;align-items:center;justify-content:center;z-index:40}
+.modal-mask.show{display:flex}
+.modal{width:min(560px,92vw);max-height:86vh;overflow-y:auto;background:linear-gradient(180deg,#33204f,#201237);
+  border:2px solid rgba(255,214,107,.5);border-radius:20px;padding:20px;box-shadow:0 20px 60px rgba(0,0,0,.6)}
+.modal h2{color:var(--gold);margin-bottom:12px;text-align:center}
+.char-detail{display:flex;gap:16px}
+.char-detail .big-pic{width:42%;aspect-ratio:3/4;border-radius:14px;overflow:hidden;background:#2c1f40;flex:none;position:relative}
+.char-detail .big-pic img{width:100%;height:100%;object-fit:cover}
+.char-detail .meta{flex:1;font-size:14px;line-height:1.9}
+.skin-row{display:flex;gap:10px;overflow-x:auto;padding:8px 2px}
+.skin-chip{flex:none;width:86px;text-align:center;cursor:pointer;border-radius:12px;overflow:hidden;
+ border:2px solid rgba(255,255,255,.2);background:#241837;padding-bottom:5px}
+.skin-chip.sel{border-color:var(--gold);box-shadow:0 0 12px rgba(255,214,107,.6)}
+.skin-chip .pic{aspect-ratio:3/4;overflow:hidden}
+.skin-chip img{width:100%;height:100%;object-fit:cover}
+.skin-chip .sn{font-size:11px;padding:3px}
+.statbar{display:flex;align-items:center;gap:6px;font-size:12px}
+.statbar .bar{flex:1;height:7px;border-radius:4px;background:rgba(255,255,255,.15);overflow:hidden}
+.statbar .fill{height:100%;background:linear-gradient(90deg,#ffd66b,#ff9845)}
+
+/* ---------- 联机大厅 ---------- */
+.lobby-box{width:min(560px,92vw);margin:30px auto;background:rgba(255,255,255,.07);
+  border:1px solid rgba(255,255,255,.16);border-radius:20px;padding:22px}
+.lobby-box input{width:100%;padding:13px;border-radius:12px;border:2px solid rgba(255,255,255,.2);
+  background:#1d1230;color:#fff;font-size:20px;letter-spacing:8px;text-align:center;font-family:inherit;margin:8px 0}
+.lobby-box input:focus{outline:none;border-color:var(--gold)}
+.lobby-actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:10px}
+.room-code-big{font-size:52px;letter-spacing:14px;text-align:center;color:var(--gold);font-weight:900;margin:8px 0}
+.lobby-msg{text-align:center;opacity:.8;line-height:1.9;min-height:44px}
+.lvl-choice{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:10px 0}
+.lvl-choice span{padding:6px 12px;border-radius:10px;background:rgba(255,255,255,.1);cursor:pointer;font-size:14px}
+.lvl-choice span.sel{background:var(--gold);color:#3a2350;font-weight:bold}
+
+/* ---------- 战斗 ---------- */
+#screen-battle{background:#0d0817}
+.battle-top{display:flex;align-items:center;gap:8px;padding:8px 12px;background:linear-gradient(180deg,#2c1c46,#1d1230);
+  border-bottom:2px solid rgba(255,214,107,.3);z-index:6;flex-wrap:wrap}
+.battle-top .pill{font-size:14px}
+#battleCanvas{flex:1;width:100%;display:block;touch-action:none;cursor:pointer}
+.shop-bar{display:flex;gap:8px;padding:8px 10px;background:linear-gradient(0deg,#241738,#1a1028);
+  overflow-x:auto;border-top:2px solid rgba(255,214,107,.3);z-index:6}
+.shop-card{flex:none;width:74px;border-radius:12px;border:2px solid rgba(255,255,255,.18);
+  background:#2a1d40;text-align:center;padding:5px 3px;cursor:pointer;transition:.1s;position:relative}
+.shop-card:hover{border-color:var(--gold)}
+.shop-card.sel{border-color:#7fffd0;box-shadow:0 0 14px rgba(127,255,208,.7);transform:translateY(-4px)}
+.shop-card.dis{opacity:.45;cursor:not-allowed}
+.shop-card .emo{font-size:26px}
+.shop-card .cost{font-size:12px;color:var(--gold);font-weight:bold}
+.shop-card .lkey{font-size:10px;color:#cdbdee;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tower-panel{position:absolute;right:12px;bottom:88px;width:210px;background:rgba(30,18,50,.95);
+  border:2px solid rgba(255,214,107,.5);border-radius:16px;padding:12px;z-index:9;display:none;font-size:13px;line-height:1.8}
+.tower-panel.show{display:block}
+.tower-panel h4{color:var(--gold);font-size:16px}
+.energy-bar{height:10px;border-radius:6px;background:rgba(255,255,255,.15);overflow:hidden;margin:4px 0}
+.energy-bar .fill{height:100%;background:linear-gradient(90deg,#8ff0ff,#7a6bff)}
+.tp-row{display:flex;gap:8px;margin-top:8px}
+.tp-row .btn{flex:1;padding:8px 6px;font-size:13px;letter-spacing:1px}
+.toast{position:absolute;left:50%;top:64px;transform:translateX(-50%);background:rgba(20,10,35,.92);
+  border:1px solid rgba(255,214,107,.5);padding:10px 22px;border-radius:999px;z-index:20;
+  opacity:0;transition:.3s;pointer-events:none;font-size:15px}
+.toast.show{opacity:1}
+.wave-hint{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:8;text-align:center;
+  font-size:30px;color:var(--gold);text-shadow:0 4px 18px rgba(0,0,0,.8);letter-spacing:6px;pointer-events:none;opacity:0;transition:.4s}
+.wave-hint.show{opacity:1}
+.net-tag{font-size:12px;color:#9ff0cd}
+.mobile-note{display:none}
+@media (max-width:720px){
+  .char-detail{flex-direction:column}
+  .char-detail .big-pic{width:60%;margin:0 auto}
+  .shop-card{width:62px}
+  .tower-panel{width:180px;bottom:80px}
+}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ============ 主菜单 ============ -->
+  <section id="screen-menu" class="screen active">
+    <span class="menu-deco" style="left:12%;top:18%">🏮</span>
+    <span class="menu-deco" style="right:14%;top:24%;animation-delay:.8s">🌸</span>
+    <span class="menu-deco" style="left:18%;bottom:16%;animation-delay:1.4s">⚡</span>
+    <span class="menu-deco" style="right:16%;bottom:20%;animation-delay:.4s">📜</span>
+    <div class="menu-card">
+      <div class="game-title">校园历险记</div>
+      <div class="game-sub">同窗皆侠士 · 执笔定乾坤</div>
+      <div class="menu-btns">
+        <button class="btn" onclick="openMap()">⚔️ 开始冒险</button>
+        <button class="btn jade" onclick="openLobby()">🛜 联机合作</button>
+        <button class="btn ghost" onclick="openGacha()">✨ 星语祈愿</button>
+        <button class="btn ghost" onclick="openCodex()">📖 同窗图鉴</button>
+      </div>
+      <p style="margin-top:26px;opacity:.55;font-size:13px">星语：<span class="currency" id="menuStars">0</span> · 已解锁关卡 <span id="menuProgress">1</span>/60</p>
+    </div>
+  </section>
+
+  <!-- ============ 关卡地图 ============ -->
+  <section id="screen-map" class="screen">
+    <div class="topbar">
+      <button class="btn ghost" onclick="showScreen('menu')">← 返回</button>
+      <span class="title">🗺 历险地图</span>
+      <span class="spacer"></span>
+      <span class="pill">✨ 星语 <b class="currency" id="mapStars">0</b></span>
+    </div>
+    <div class="scroll" id="mapBody" style="flex:1"></div>
+  </section>
+
+  <!-- ============ 抽卡 ============ -->
+  <section id="screen-gacha" class="screen">
+    <div class="topbar">
+      <button class="btn ghost" onclick="showScreen('menu')">← 返回</button>
+      <span class="title">✨ 星语祈愿</span>
+      <span class="spacer"></span>
+      <span class="pill">✨ <b class="currency" id="gachaStars">0</b></span>
+    </div>
+    <div class="scroll gacha-box">
+      <div class="gacha-banner">国风换装 · 绝色同窗</div>
+      <p style="opacity:.75;line-height:2">通关关卡可获得「星语」，祈愿获取同窗们的限定换装立绘（纯外观，不影响战斗强度）<br>
+      概率：N 60% / R 28% / SR 9% / SSR 2.5% / UR 0.5%　重复获得转化 50 星语</p>
+      <div class="gacha-btns">
+        <button class="btn" onclick="drawGacha(1)">祈愿一次<br><small>100 星语</small></button>
+        <button class="btn red" onclick="drawGacha(10)">十连祈愿<br><small>900 星语</small></button>
+      </div>
+      <div id="drawResult" class="draw-result"></div>
+      <h3 style="margin:22px 0 10px;color:var(--gold)">祈愿绘卷</h3>
+      <div id="skinPool" class="draw-result" style="margin-top:0"></div>
+    </div>
+  </section>
+
+  <!-- ============ 图鉴 ============ -->
+  <section id="screen-codex" class="screen">
+    <div class="topbar">
+      <button class="btn ghost" onclick="showScreen('menu')">← 返回</button>
+      <span class="title">📖 同窗图鉴</span>
+      <span class="spacer"></span><span class="pill">30 名同窗 · 强度同模 · 机制各异</span>
+    </div>
+    <div class="scroll panel-wrap"><div id="codexGrid" class="char-grid"></div></div>
+  </section>
+
+  <!-- ============ 联机大厅 ============ -->
+  <section id="screen-lobby" class="screen">
+    <div class="topbar">
+      <button class="btn ghost" onclick="leaveLobby();showScreen('menu')">← 返回</button>
+      <span class="title">🛜 联机合作</span>
+    </div>
+    <div class="scroll" style="flex:1">
+      <div class="lobby-box" id="lobbyMain">
+        <h2 style="text-align:center;color:var(--gold)">组队守护校园</h2>
+        <p style="text-align:center;opacity:.75;line-height:1.9;margin:8px 0 16px">创建房间获得房间码，好友输入房间码即可跨设备联机。<br>两人共享生命值、各自拥有金币，可共同放置同窗、释放大招。</p>
+        <div class="lobby-actions" style="justify-content:center">
+          <button class="btn" onclick="createRoom()">🏠 创建房间</button>
+          <button class="btn jade" onclick="toggleJoin()">✍️ 输入房间码</button>
+        </div>
+        <div id="joinBox" style="display:none;margin-top:16px">
+          <input id="joinCode" maxlength="6" placeholder="六位房间码" inputmode="numeric">
+          <div style="text-align:center"><button class="btn jade" onclick="joinRoom()">进入房间</button></div>
+        </div>
+        <p class="lobby-msg" id="lobbyMsg" style="margin-top:14px"></p>
+      </div>
+      <div class="lobby-box" id="lobbyRoom" style="display:none">
+        <h2 id="lobbyRoleTitle">房间</h2>
+        <div id="hostCodeWrap">
+          <div style="text-align:center;opacity:.8">把房间码发给好友</div>
+          <div class="room-code-big" id="roomCodeBig">------</div>
+        </div>
+        <div class="lobby-msg" id="roomPlayers"></div>
+        <div id="hostLevelPick">
+          <div style="text-align:center;opacity:.85;margin-top:6px">选择关卡：</div>
+          <div class="lvl-choice" id="lobbyLevels"></div>
+        </div>
+        <div class="lobby-actions" style="justify-content:center;margin-top:14px">
+          <button class="btn" id="startRoomBtn" onclick="hostStartBattle()">▶ 开始战斗</button>
+          <button class="btn red" onclick="leaveLobby()">离开房间</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 战斗 ============ -->
+  <section id="screen-battle" class="screen">
+    <div class="battle-top">
+      <button class="btn ghost" style="padding:7px 12px;font-size:13px" onclick="exitBattle()">← 撤离</button>
+      <span class="pill">❤️ <b id="hudLives">20</b></span>
+      <span class="pill" id="hudGoldWrap">💰 <b class="currency" id="hudGold">300</b></span>
+      <span class="pill">🌊 <b id="hudWave">0/0</b></span>
+      <span class="pill" id="hudLevelName">第1关</span>
+      <span class="spacer"></span>
+      <span class="net-tag" id="netTag"></span>
+      <button class="btn ghost" style="padding:7px 12px;font-size:13px" onclick="toggleSpeed()" id="speedBtn">⏩ 1x</button>
+      <button class="btn" style="padding:7px 12px;font-size:13px" onclick="callNextWave()" id="waveBtn">召唤下一波 ▶</button>
+    </div>
+    <canvas id="battleCanvas"></canvas>
+    <div class="shop-bar" id="shopBar"></div>
+    <div class="tower-panel" id="towerPanel">
+      <h4 id="tpName"></h4>
+      <div id="tpInfo"></div>
+      <div class="energy-bar"><div class="fill" id="tpEnergy" style="width:0%"></div></div>
+      <div class="tp-row">
+        <button class="btn red" onclick="sellSelected()">撤下(70%)</button>
+        <button class="btn jade" id="tpUlt" onclick="ultSelected()" disabled>✨大招</button>
+      </div>
+    </div>
+    <div class="toast" id="toast"></div>
+    <div class="wave-hint" id="waveHint"></div>
+  </section>
+
+  <!-- ============ 通用弹窗 ============ -->
+  <div class="modal-mask" id="modalMask">
+    <div class="modal" id="modalBody"></div>
+  </div>
+
+</div>
+<script>(()=>{function e(e,t,n,r){Object.defineProperty(e,t,{get:n,set:r,enumerable:!0,configurable:!0})}function t(e){return e&&e.__esModule?e.default:e}class n{constructor(){this.chunkedMTU=16300,this._dataCount=1,this.chunk=e=>{let t=[],n=e.byteLength,r=Math.ceil(n/this.chunkedMTU),i=0,o=0;for(;o<n;){let s=Math.min(n,o+this.chunkedMTU),a=e.slice(o,s),c={__peerData:this._dataCount,n:i,data:a,total:r};t.push(c),o=s,i++}return this._dataCount++,t}}}class r{append_buffer(e){this.flush(),this._parts.push(e)}append(e){this._pieces.push(e)}flush(){if(this._pieces.length>0){let e=new Uint8Array(this._pieces);this._parts.push(e),this._pieces=[]}}toArrayBuffer(){let e=[];for(let t of this._parts)e.push(t);return function(e){let t=0;for(let n of e)t+=n.byteLength;let n=new Uint8Array(t),r=0;for(let t of e){let e=new Uint8Array(t.buffer,t.byteOffset,t.byteLength);n.set(e,r),r+=t.byteLength}return n}(e).buffer}constructor(){this.encoder=new TextEncoder,this._pieces=[],this._parts=[]}}function i(e){return new s(e).unpack()}function o(e){let t=new a,n=t.pack(e);return n instanceof Promise?n.then(()=>t.getBuffer()):t.getBuffer()}class s{unpack(){let e;let t=this.unpack_uint8();if(t<128)return t;if((224^t)<32)return(224^t)-32;if((e=160^t)<=15)return this.unpack_raw(e);if((e=176^t)<=15)return this.unpack_string(e);if((e=144^t)<=15)return this.unpack_array(e);if((e=128^t)<=15)return this.unpack_map(e);switch(t){case 192:return null;case 193:case 212:case 213:case 214:case 215:return;case 194:return!1;case 195:return!0;case 202:return this.unpack_float();case 203:return this.unpack_double();case 204:return this.unpack_uint8();case 205:return this.unpack_uint16();case 206:return this.unpack_uint32();case 207:return this.unpack_uint64();case 208:return this.unpack_int8();case 209:return this.unpack_int16();case 210:return this.unpack_int32();case 211:return this.unpack_int64();case 216:return e=this.unpack_uint16(),this.unpack_string(e);case 217:return e=this.unpack_uint32(),this.unpack_string(e);case 218:return e=this.unpack_uint16(),this.unpack_raw(e);case 219:return e=this.unpack_uint32(),this.unpack_raw(e);case 220:return e=this.unpack_uint16(),this.unpack_array(e);case 221:return e=this.unpack_uint32(),this.unpack_array(e);case 222:return e=this.unpack_uint16(),this.unpack_map(e);case 223:return e=this.unpack_uint32(),this.unpack_map(e)}}unpack_uint8(){let e=255&this.dataView[this.index];return this.index++,e}unpack_uint16(){let e=this.read(2),t=(255&e[0])*256+(255&e[1]);return this.index+=2,t}unpack_uint32(){let e=this.read(4),t=((256*e[0]+e[1])*256+e[2])*256+e[3];return this.index+=4,t}unpack_uint64(){let e=this.read(8),t=((((((256*e[0]+e[1])*256+e[2])*256+e[3])*256+e[4])*256+e[5])*256+e[6])*256+e[7];return this.index+=8,t}unpack_int8(){let e=this.unpack_uint8();return e<128?e:e-256}unpack_int16(){let e=this.unpack_uint16();return e<32768?e:e-65536}unpack_int32(){let e=this.unpack_uint32();return e<2147483648?e:e-4294967296}unpack_int64(){let e=this.unpack_uint64();return e<0x7fffffffffffffff?e:e-18446744073709552e3}unpack_raw(e){if(this.length<this.index+e)throw Error(`BinaryPackFailure: index is out of range ${this.index} ${e} ${this.length}`);let t=this.dataBuffer.slice(this.index,this.index+e);return this.index+=e,t}unpack_string(e){let t,n;let r=this.read(e),i=0,o="";for(;i<e;)(t=r[i])<160?(n=t,i++):(192^t)<32?(n=(31&t)<<6|63&r[i+1],i+=2):(224^t)<16?(n=(15&t)<<12|(63&r[i+1])<<6|63&r[i+2],i+=3):(n=(7&t)<<18|(63&r[i+1])<<12|(63&r[i+2])<<6|63&r[i+3],i+=4),o+=String.fromCodePoint(n);return this.index+=e,o}unpack_array(e){let t=Array(e);for(let n=0;n<e;n++)t[n]=this.unpack();return t}unpack_map(e){let t={};for(let n=0;n<e;n++)t[this.unpack()]=this.unpack();return t}unpack_float(){let e=this.unpack_uint32();return(0==e>>31?1:-1)*(8388607&e|8388608)*2**((e>>23&255)-127-23)}unpack_double(){let e=this.unpack_uint32(),t=this.unpack_uint32(),n=(e>>20&2047)-1023;return(0==e>>31?1:-1)*((1048575&e|1048576)*2**(n-20)+t*2**(n-52))}read(e){let t=this.index;if(t+e<=this.length)return this.dataView.subarray(t,t+e);throw Error("BinaryPackFailure: read index out of range")}constructor(e){this.index=0,this.dataBuffer=e,this.dataView=new Uint8Array(this.dataBuffer),this.length=this.dataBuffer.byteLength}}class a{getBuffer(){return this._bufferBuilder.toArrayBuffer()}pack(e){if("string"==typeof e)this.pack_string(e);else if("number"==typeof e)Math.floor(e)===e?this.pack_integer(e):this.pack_double(e);else if("boolean"==typeof e)!0===e?this._bufferBuilder.append(195):!1===e&&this._bufferBuilder.append(194);else if(void 0===e)this._bufferBuilder.append(192);else if("object"==typeof e){if(null===e)this._bufferBuilder.append(192);else{let t=e.constructor;if(e instanceof Array){let t=this.pack_array(e);if(t instanceof Promise)return t.then(()=>this._bufferBuilder.flush())}else if(e instanceof ArrayBuffer)this.pack_bin(new Uint8Array(e));else if("BYTES_PER_ELEMENT"in e)this.pack_bin(new Uint8Array(e.buffer,e.byteOffset,e.byteLength));else if(e instanceof Date)this.pack_string(e.toString());else if(e instanceof Blob)return e.arrayBuffer().then(e=>{this.pack_bin(new Uint8Array(e)),this._bufferBuilder.flush()});else if(t==Object||t.toString().startsWith("class")){let t=this.pack_object(e);if(t instanceof Promise)return t.then(()=>this._bufferBuilder.flush())}else throw Error(`Type "${t.toString()}" not yet supported`)}}else throw Error(`Type "${typeof e}" not yet supported`);this._bufferBuilder.flush()}pack_bin(e){let t=e.length;if(t<=15)this.pack_uint8(160+t);else if(t<=65535)this._bufferBuilder.append(218),this.pack_uint16(t);else if(t<=4294967295)this._bufferBuilder.append(219),this.pack_uint32(t);else throw Error("Invalid length");this._bufferBuilder.append_buffer(e)}pack_string(e){let t=this._textEncoder.encode(e),n=t.length;if(n<=15)this.pack_uint8(176+n);else if(n<=65535)this._bufferBuilder.append(216),this.pack_uint16(n);else if(n<=4294967295)this._bufferBuilder.append(217),this.pack_uint32(n);else throw Error("Invalid length");this._bufferBuilder.append_buffer(t)}pack_array(e){let t=e.length;if(t<=15)this.pack_uint8(144+t);else if(t<=65535)this._bufferBuilder.append(220),this.pack_uint16(t);else if(t<=4294967295)this._bufferBuilder.append(221),this.pack_uint32(t);else throw Error("Invalid length");let n=r=>{if(r<t){let t=this.pack(e[r]);return t instanceof Promise?t.then(()=>n(r+1)):n(r+1)}};return n(0)}pack_integer(e){if(e>=-32&&e<=127)this._bufferBuilder.append(255&e);else if(e>=0&&e<=255)this._bufferBuilder.append(204),this.pack_uint8(e);else if(e>=-128&&e<=127)this._bufferBuilder.append(208),this.pack_int8(e);else if(e>=0&&e<=65535)this._bufferBuilder.append(205),this.pack_uint16(e);else if(e>=-32768&&e<=32767)this._bufferBuilder.append(209),this.pack_int16(e);else if(e>=0&&e<=4294967295)this._bufferBuilder.append(206),this.pack_uint32(e);else if(e>=-2147483648&&e<=2147483647)this._bufferBuilder.append(210),this.pack_int32(e);else if(e>=-0x8000000000000000&&e<=0x7fffffffffffffff)this._bufferBuilder.append(211),this.pack_int64(e);else if(e>=0&&e<=18446744073709552e3)this._bufferBuilder.append(207),this.pack_uint64(e);else throw Error("Invalid integer")}pack_double(e){let t=0;e<0&&(t=1,e=-e);let n=Math.floor(Math.log(e)/Math.LN2),r=Math.floor((e/2**n-1)*4503599627370496),i=t<<31|n+1023<<20|r/4294967296&1048575;this._bufferBuilder.append(203),this.pack_int32(i),this.pack_int32(r%4294967296)}pack_object(e){let t=Object.keys(e),n=t.length;if(n<=15)this.pack_uint8(128+n);else if(n<=65535)this._bufferBuilder.append(222),this.pack_uint16(n);else if(n<=4294967295)this._bufferBuilder.append(223),this.pack_uint32(n);else throw Error("Invalid length");let r=n=>{if(n<t.length){let i=t[n];if(e.hasOwnProperty(i)){this.pack(i);let t=this.pack(e[i]);if(t instanceof Promise)return t.then(()=>r(n+1))}return r(n+1)}};return r(0)}pack_uint8(e){this._bufferBuilder.append(e)}pack_uint16(e){this._bufferBuilder.append(e>>8),this._bufferBuilder.append(255&e)}pack_uint32(e){let t=4294967295&e;this._bufferBuilder.append((4278190080&t)>>>24),this._bufferBuilder.append((16711680&t)>>>16),this._bufferBuilder.append((65280&t)>>>8),this._bufferBuilder.append(255&t)}pack_uint64(e){let t=e/4294967296,n=e%4294967296;this._bufferBuilder.append((4278190080&t)>>>24),this._bufferBuilder.append((16711680&t)>>>16),this._bufferBuilder.append((65280&t)>>>8),this._bufferBuilder.append(255&t),this._bufferBuilder.append((4278190080&n)>>>24),this._bufferBuilder.append((16711680&n)>>>16),this._bufferBuilder.append((65280&n)>>>8),this._bufferBuilder.append(255&n)}pack_int8(e){this._bufferBuilder.append(255&e)}pack_int16(e){this._bufferBuilder.append((65280&e)>>8),this._bufferBuilder.append(255&e)}pack_int32(e){this._bufferBuilder.append(e>>>24&255),this._bufferBuilder.append((16711680&e)>>>16),this._bufferBuilder.append((65280&e)>>>8),this._bufferBuilder.append(255&e)}pack_int64(e){let t=Math.floor(e/4294967296),n=e%4294967296;this._bufferBuilder.append((4278190080&t)>>>24),this._bufferBuilder.append((16711680&t)>>>16),this._bufferBuilder.append((65280&t)>>>8),this._bufferBuilder.append(255&t),this._bufferBuilder.append((4278190080&n)>>>24),this._bufferBuilder.append((16711680&n)>>>16),this._bufferBuilder.append((65280&n)>>>8),this._bufferBuilder.append(255&n)}constructor(){this._bufferBuilder=new r,this._textEncoder=new TextEncoder}}let c=!0,l=!0;function p(e,t,n){let r=e.match(t);return r&&r.length>=n&&parseInt(r[n],10)}function d(e,t,n){if(!e.RTCPeerConnection)return;let r=e.RTCPeerConnection.prototype,i=r.addEventListener;r.addEventListener=function(e,r){if(e!==t)return i.apply(this,arguments);let o=e=>{let t=n(e);t&&(r.handleEvent?r.handleEvent(t):r(t))};return this._eventMap=this._eventMap||{},this._eventMap[t]||(this._eventMap[t]=new Map),this._eventMap[t].set(r,o),i.apply(this,[e,o])};let o=r.removeEventListener;r.removeEventListener=function(e,n){if(e!==t||!this._eventMap||!this._eventMap[t]||!this._eventMap[t].has(n))return o.apply(this,arguments);let r=this._eventMap[t].get(n);return this._eventMap[t].delete(n),0===this._eventMap[t].size&&delete this._eventMap[t],0===Object.keys(this._eventMap).length&&delete this._eventMap,o.apply(this,[e,r])},Object.defineProperty(r,"on"+t,{get(){return this["_on"+t]},set(e){this["_on"+t]&&(this.removeEventListener(t,this["_on"+t]),delete this["_on"+t]),e&&this.addEventListener(t,this["_on"+t]=e)},enumerable:!0,configurable:!0})}function h(e){return"boolean"!=typeof e?Error("Argument type: "+typeof e+". Please use a boolean."):(c=e,e?"adapter.js logging disabled":"adapter.js logging enabled")}function u(e){return"boolean"!=typeof e?Error("Argument type: "+typeof e+". Please use a boolean."):(l=!e,"adapter.js deprecation warnings "+(e?"disabled":"enabled"))}function f(){"object"!=typeof window||c||"undefined"==typeof console||"function"!=typeof console.log||console.log.apply(console,arguments)}function m(e,t){l&&console.warn(e+" is deprecated, please use "+t+" instead.")}function g(e){return"[object Object]"===Object.prototype.toString.call(e)}function y(e,t,n){let r=n?"outbound-rtp":"inbound-rtp",i=new Map;if(null===t)return i;let o=[];return e.forEach(e=>{"track"===e.type&&e.trackIdentifier===t.id&&o.push(e)}),o.forEach(t=>{e.forEach(n=>{n.type===r&&n.trackId===t.id&&function e(t,n,r){!n||r.has(n.id)||(r.set(n.id,n),Object.keys(n).forEach(i=>{i.endsWith("Id")?e(t,t.get(n[i]),r):i.endsWith("Ids")&&n[i].forEach(n=>{e(t,t.get(n),r)})}))}(e,n,i)})}),i}var _,C,b,v,k,T,S,R,P,w,E,D,x,I,M,O,j={};function L(e,t){let n=e&&e.navigator;if(!n.mediaDevices)return;let r=function(e){if("object"!=typeof e||e.mandatory||e.optional)return e;let t={};return Object.keys(e).forEach(n=>{if("require"===n||"advanced"===n||"mediaSource"===n)return;let r="object"==typeof e[n]?e[n]:{ideal:e[n]};void 0!==r.exact&&"number"==typeof r.exact&&(r.min=r.max=r.exact);let i=function(e,t){return e?e+t.charAt(0).toUpperCase()+t.slice(1):"deviceId"===t?"sourceId":t};if(void 0!==r.ideal){t.optional=t.optional||[];let e={};"number"==typeof r.ideal?(e[i("min",n)]=r.ideal,t.optional.push(e),(e={})[i("max",n)]=r.ideal):e[i("",n)]=r.ideal,t.optional.push(e)}void 0!==r.exact&&"number"!=typeof r.exact?(t.mandatory=t.mandatory||{},t.mandatory[i("",n)]=r.exact):["min","max"].forEach(e=>{void 0!==r[e]&&(t.mandatory=t.mandatory||{},t.mandatory[i(e,n)]=r[e])})}),e.advanced&&(t.optional=(t.optional||[]).concat(e.advanced)),t},i=function(e,i){if(t.version>=61)return i(e);if((e=JSON.parse(JSON.stringify(e)))&&"object"==typeof e.audio){let t=function(e,t,n){t in e&&!(n in e)&&(e[n]=e[t],delete e[t])};t((e=JSON.parse(JSON.stringify(e))).audio,"autoGainControl","googAutoGainControl"),t(e.audio,"noiseSuppression","googNoiseSuppression"),e.audio=r(e.audio)}if(e&&"object"==typeof e.video){let o=e.video.facingMode;o=o&&("object"==typeof o?o:{ideal:o});let s=t.version<66;if(o&&("user"===o.exact||"environment"===o.exact||"user"===o.ideal||"environment"===o.ideal)&&!(n.mediaDevices.getSupportedConstraints&&n.mediaDevices.getSupportedConstraints().facingMode&&!s)){let t;if(delete e.video.facingMode,"environment"===o.exact||"environment"===o.ideal?t=["back","rear"]:("user"===o.exact||"user"===o.ideal)&&(t=["front"]),t)return n.mediaDevices.enumerateDevices().then(n=>{let s=(n=n.filter(e=>"videoinput"===e.kind)).find(e=>t.some(t=>e.label.toLowerCase().includes(t)));return!s&&n.length&&t.includes("back")&&(s=n[n.length-1]),s&&(e.video.deviceId=o.exact?{exact:s.deviceId}:{ideal:s.deviceId}),e.video=r(e.video),f("chrome: "+JSON.stringify(e)),i(e)})}e.video=r(e.video)}return f("chrome: "+JSON.stringify(e)),i(e)},o=function(e){return t.version>=64?e:{name:({PermissionDeniedError:"NotAllowedError",PermissionDismissedError:"NotAllowedError",InvalidStateError:"NotAllowedError",DevicesNotFoundError:"NotFoundError",ConstraintNotSatisfiedError:"OverconstrainedError",TrackStartError:"NotReadableError",MediaDeviceFailedDueToShutdown:"NotAllowedError",MediaDeviceKillSwitchOn:"NotAllowedError",TabCaptureError:"AbortError",ScreenCaptureError:"AbortError",DeviceCaptureError:"AbortError"})[e.name]||e.name,message:e.message,constraint:e.constraint||e.constraintName,toString(){return this.name+(this.message&&": ")+this.message}}};if(n.getUserMedia=(function(e,t,r){i(e,e=>{n.webkitGetUserMedia(e,t,e=>{r&&r(o(e))})})}).bind(n),n.mediaDevices.getUserMedia){let e=n.mediaDevices.getUserMedia.bind(n.mediaDevices);n.mediaDevices.getUserMedia=function(t){return i(t,t=>e(t).then(e=>{if(t.audio&&!e.getAudioTracks().length||t.video&&!e.getVideoTracks().length)throw e.getTracks().forEach(e=>{e.stop()}),new DOMException("","NotFoundError");return e},e=>Promise.reject(o(e))))}}}function A(e){e.MediaStream=e.MediaStream||e.webkitMediaStream}function B(e){if("object"!=typeof e||!e.RTCPeerConnection||"ontrack"in e.RTCPeerConnection.prototype)d(e,"track",e=>(e.transceiver||Object.defineProperty(e,"transceiver",{value:{receiver:e.receiver}}),e));else{Object.defineProperty(e.RTCPeerConnection.prototype,"ontrack",{get(){return this._ontrack},set(e){this._ontrack&&this.removeEventListener("track",this._ontrack),this.addEventListener("track",this._ontrack=e)},enumerable:!0,configurable:!0});let t=e.RTCPeerConnection.prototype.setRemoteDescription;e.RTCPeerConnection.prototype.setRemoteDescription=function(){return this._ontrackpoly||(this._ontrackpoly=t=>{t.stream.addEventListener("addtrack",n=>{let r;r=e.RTCPeerConnection.prototype.getReceivers?this.getReceivers().find(e=>e.track&&e.track.id===n.track.id):{track:n.track};let i=new Event("track");i.track=n.track,i.receiver=r,i.transceiver={receiver:r},i.streams=[t.stream],this.dispatchEvent(i)}),t.stream.getTracks().forEach(n=>{let r;r=e.RTCPeerConnection.prototype.getReceivers?this.getReceivers().find(e=>e.track&&e.track.id===n.id):{track:n};let i=new Event("track");i.track=n,i.receiver=r,i.transceiver={receiver:r},i.streams=[t.stream],this.dispatchEvent(i)})},this.addEventListener("addstream",this._ontrackpoly)),t.apply(this,arguments)}}}function F(e){if("object"==typeof e&&e.RTCPeerConnection&&!("getSenders"in e.RTCPeerConnection.prototype)&&"createDTMFSender"in e.RTCPeerConnection.prototype){let t=function(e,t){return{track:t,get dtmf(){return void 0===this._dtmf&&("audio"===t.kind?this._dtmf=e.createDTMFSender(t):this._dtmf=null),this._dtmf},_pc:e}};if(!e.RTCPeerConnection.prototype.getSenders){e.RTCPeerConnection.prototype.getSenders=function(){return this._senders=this._senders||[],this._senders.slice()};let n=e.RTCPeerConnection.prototype.addTrack;e.RTCPeerConnection.prototype.addTrack=function(e,r){let i=n.apply(this,arguments);return i||(i=t(this,e),this._senders.push(i)),i};let r=e.RTCPeerConnection.prototype.removeTrack;e.RTCPeerConnection.prototype.removeTrack=function(e){r.apply(this,arguments);let t=this._senders.indexOf(e);-1!==t&&this._senders.splice(t,1)}}let n=e.RTCPeerConnection.prototype.addStream;e.RTCPeerConnection.prototype.addStream=function(e){this._senders=this._senders||[],n.apply(this,[e]),e.getTracks().forEach(e=>{this._senders.push(t(this,e))})};let r=e.RTCPeerConnection.prototype.removeStream;e.RTCPeerConnection.prototype.removeStream=function(e){this._senders=this._senders||[],r.apply(this,[e]),e.getTracks().forEach(e=>{let t=this._senders.find(t=>t.track===e);t&&this._senders.splice(this._senders.indexOf(t),1)})}}else if("object"==typeof e&&e.RTCPeerConnection&&"getSenders"in e.RTCPeerConnection.prototype&&"createDTMFSender"in e.RTCPeerConnection.prototype&&e.RTCRtpSender&&!("dtmf"in e.RTCRtpSender.prototype)){let t=e.RTCPeerConnection.prototype.getSenders;e.RTCPeerConnection.prototype.getSenders=function(){let e=t.apply(this,[]);return e.forEach(e=>e._pc=this),e},Object.defineProperty(e.RTCRtpSender.prototype,"dtmf",{get(){return void 0===this._dtmf&&("audio"===this.track.kind?this._dtmf=this._pc.createDTMFSender(this.track):this._dtmf=null),this._dtmf}})}}function U(e){if(!("object"==typeof e&&e.RTCPeerConnection&&e.RTCRtpSender&&e.RTCRtpReceiver))return;if(!("getStats"in e.RTCRtpSender.prototype)){let t=e.RTCPeerConnection.prototype.getSenders;t&&(e.RTCPeerConnection.prototype.getSenders=function(){let e=t.apply(this,[]);return e.forEach(e=>e._pc=this),e});let n=e.RTCPeerConnection.prototype.addTrack;n&&(e.RTCPeerConnection.prototype.addTrack=function(){let e=n.apply(this,arguments);return e._pc=this,e}),e.RTCRtpSender.prototype.getStats=function(){let e=this;return this._pc.getStats().then(t=>y(t,e.track,!0))}}if(!("getStats"in e.RTCRtpReceiver.prototype)){let t=e.RTCPeerConnection.prototype.getReceivers;t&&(e.RTCPeerConnection.prototype.getReceivers=function(){let e=t.apply(this,[]);return e.forEach(e=>e._pc=this),e}),d(e,"track",e=>(e.receiver._pc=e.srcElement,e)),e.RTCRtpReceiver.prototype.getStats=function(){let e=this;return this._pc.getStats().then(t=>y(t,e.track,!1))}}if(!("getStats"in e.RTCRtpSender.prototype&&"getStats"in e.RTCRtpReceiver.prototype))return;let t=e.RTCPeerConnection.prototype.getStats;e.RTCPeerConnection.prototype.getStats=function(){if(arguments.length>0&&arguments[0]instanceof e.MediaStreamTrack){let e,t,n;let r=arguments[0];return(this.getSenders().forEach(t=>{t.track===r&&(e?n=!0:e=t)}),this.getReceivers().forEach(e=>(e.track===r&&(t?n=!0:t=e),e.track===r)),n||e&&t)?Promise.reject(new DOMException("There are more than one sender or receiver for the track.","InvalidAccessError")):e?e.getStats():t?t.getStats():Promise.reject(new DOMException("There is no sender or receiver for the track.","InvalidAccessError"))}return t.apply(this,arguments)}}function z(e){e.RTCPeerConnection.prototype.getLocalStreams=function(){return this._shimmedLocalStreams=this._shimmedLocalStreams||{},Object.keys(this._shimmedLocalStreams).map(e=>this._shimmedLocalStreams[e][0])};let t=e.RTCPeerConnection.prototype.addTrack;e.RTCPeerConnection.prototype.addTrack=function(e,n){if(!n)return t.apply(this,arguments);this._shimmedLocalStreams=this._shimmedLocalStreams||{};let r=t.apply(this,arguments);return this._shimmedLocalStreams[n.id]?-1===this._shimmedLocalStreams[n.id].indexOf(r)&&this._shimmedLocalStreams[n.id].push(r):this._shimmedLocalStreams[n.id]=[n,r],r};let n=e.RTCPeerConnection.prototype.addStream;e.RTCPeerConnection.prototype.addStream=function(e){this._shimmedLocalStreams=this._shimmedLocalStreams||{},e.getTracks().forEach(e=>{if(this.getSenders().find(t=>t.track===e))throw new DOMException("Track already exists.","InvalidAccessError")});let t=this.getSenders();n.apply(this,arguments);let r=this.getSenders().filter(e=>-1===t.indexOf(e));this._shimmedLocalStreams[e.id]=[e].concat(r)};let r=e.RTCPeerConnection.prototype.removeStream;e.RTCPeerConnection.prototype.removeStream=function(e){return this._shimmedLocalStreams=this._shimmedLocalStreams||{},delete this._shimmedLocalStreams[e.id],r.apply(this,arguments)};let i=e.RTCPeerConnection.prototype.removeTrack;e.RTCPeerConnection.prototype.removeTrack=function(e){return this._shimmedLocalStreams=this._shimmedLocalStreams||{},e&&Object.keys(this._shimmedLocalStreams).forEach(t=>{let n=this._shimmedLocalStreams[t].indexOf(e);-1!==n&&this._shimmedLocalStreams[t].splice(n,1),1===this._shimmedLocalStreams[t].length&&delete this._shimmedLocalStreams[t]}),i.apply(this,arguments)}}function N(e,t){if(!e.RTCPeerConnection)return;if(e.RTCPeerConnection.prototype.addTrack&&t.version>=65)return z(e);let n=e.RTCPeerConnection.prototype.getLocalStreams;e.RTCPeerConnection.prototype.getLocalStreams=function(){let e=n.apply(this);return this._reverseStreams=this._reverseStreams||{},e.map(e=>this._reverseStreams[e.id])};let r=e.RTCPeerConnection.prototype.addStream;e.RTCPeerConnection.prototype.addStream=function(t){if(this._streams=this._streams||{},this._reverseStreams=this._reverseStreams||{},t.getTracks().forEach(e=>{if(this.getSenders().find(t=>t.track===e))throw new DOMException("Track already exists.","InvalidAccessError")}),!this._reverseStreams[t.id]){let n=new e.MediaStream(t.getTracks());this._streams[t.id]=n,this._reverseStreams[n.id]=t,t=n}r.apply(this,[t])};let i=e.RTCPeerConnection.prototype.removeStream;function o(e,t){let n=t.sdp;return Object.keys(e._reverseStreams||[]).forEach(t=>{let r=e._reverseStreams[t],i=e._streams[r.id];n=n.replace(RegExp(i.id,"g"),r.id)}),new RTCSessionDescription({type:t.type,sdp:n})}e.RTCPeerConnection.prototype.removeStream=function(e){this._streams=this._streams||{},this._reverseStreams=this._reverseStreams||{},i.apply(this,[this._streams[e.id]||e]),delete this._reverseStreams[this._streams[e.id]?this._streams[e.id].id:e.id],delete this._streams[e.id]},e.RTCPeerConnection.prototype.addTrack=function(t,n){if("closed"===this.signalingState)throw new DOMException("The RTCPeerConnection's signalingState is 'closed'.","InvalidStateError");let r=[].slice.call(arguments,1);if(1!==r.length||!r[0].getTracks().find(e=>e===t))throw new DOMException("The adapter.js addTrack polyfill only supports a single  stream which is associated with the specified track.","NotSupportedError");if(this.getSenders().find(e=>e.track===t))throw new DOMException("Track already exists.","InvalidAccessError");this._streams=this._streams||{},this._reverseStreams=this._reverseStreams||{};let i=this._streams[n.id];if(i)i.addTrack(t),Promise.resolve().then(()=>{this.dispatchEvent(new Event("negotiationneeded"))});else{let r=new e.MediaStream([t]);this._streams[n.id]=r,this._reverseStreams[r.id]=n,this.addStream(r)}return this.getSenders().find(e=>e.track===t)},["createOffer","createAnswer"].forEach(function(t){let n=e.RTCPeerConnection.prototype[t];e.RTCPeerConnection.prototype[t]=({[t](){let e=arguments,t=arguments.length&&"function"==typeof arguments[0];return t?n.apply(this,[t=>{let n=o(this,t);e[0].apply(null,[n])},t=>{e[1]&&e[1].apply(null,t)},arguments[2]]):n.apply(this,arguments).then(e=>o(this,e))}})[t]});let s=e.RTCPeerConnection.prototype.setLocalDescription;e.RTCPeerConnection.prototype.setLocalDescription=function(){var e,t;let n;return arguments.length&&arguments[0].type&&(arguments[0]=(e=this,t=arguments[0],n=t.sdp,Object.keys(e._reverseStreams||[]).forEach(t=>{let r=e._reverseStreams[t],i=e._streams[r.id];n=n.replace(RegExp(r.id,"g"),i.id)}),new RTCSessionDescription({type:t.type,sdp:n}))),s.apply(this,arguments)};let a=Object.getOwnPropertyDescriptor(e.RTCPeerConnection.prototype,"localDescription");Object.defineProperty(e.RTCPeerConnection.prototype,"localDescription",{get(){let e=a.get.apply(this);return""===e.type?e:o(this,e)}}),e.RTCPeerConnection.prototype.removeTrack=function(e){let t;if("closed"===this.signalingState)throw new DOMException("The RTCPeerConnection's signalingState is 'closed'.","InvalidStateError");if(!e._pc)throw new DOMException("Argument 1 of RTCPeerConnection.removeTrack does not implement interface RTCRtpSender.","TypeError");if(e._pc!==this)throw new DOMException("Sender was not created by this connection.","InvalidAccessError");this._streams=this._streams||{},Object.keys(this._streams).forEach(n=>{this._streams[n].getTracks().find(t=>e.track===t)&&(t=this._streams[n])}),t&&(1===t.getTracks().length?this.removeStream(this._reverseStreams[t.id]):t.removeTrack(e.track),this.dispatchEvent(new Event("negotiationneeded")))}}function $(e,t){!e.RTCPeerConnection&&e.webkitRTCPeerConnection&&(e.RTCPeerConnection=e.webkitRTCPeerConnection),e.RTCPeerConnection&&t.version<53&&["setLocalDescription","setRemoteDescription","addIceCandidate"].forEach(function(t){let n=e.RTCPeerConnection.prototype[t];e.RTCPeerConnection.prototype[t]=({[t](){return arguments[0]=new("addIceCandidate"===t?e.RTCIceCandidate:e.RTCSessionDescription)(arguments[0]),n.apply(this,arguments)}})[t]})}function J(e,t){d(e,"negotiationneeded",e=>{let n=e.target;if(!(t.version<72)&&(!n.getConfiguration||"plan-b"!==n.getConfiguration().sdpSemantics)||"stable"===n.signalingState)return e})}e(j,"shimMediaStream",()=>A),e(j,"shimOnTrack",()=>B),e(j,"shimGetSendersWithDtmf",()=>F),e(j,"shimSenderReceiverGetStats",()=>U),e(j,"shimAddTrackRemoveTrackWithNative",()=>z),e(j,"shimAddTrackRemoveTrack",()=>N),e(j,"shimPeerConnection",()=>$),e(j,"fixNegotiationNeeded",()=>J),e(j,"shimGetUserMedia",()=>L);var V={};function G(e,t){let n=e&&e.navigator,r=e&&e.MediaStreamTrack;if(n.getUserMedia=function(e,t,r){m("navigator.getUserMedia","navigator.mediaDevices.getUserMedia"),n.mediaDevices.getUserMedia(e).then(t,r)},!(t.version>55&&"autoGainControl"in n.mediaDevices.getSupportedConstraints())){let e=function(e,t,n){t in e&&!(n in e)&&(e[n]=e[t],delete e[t])},t=n.mediaDevices.getUserMedia.bind(n.mediaDevices);if(n.mediaDevices.getUserMedia=function(n){return"object"==typeof n&&"object"==typeof n.audio&&(e((n=JSON.parse(JSON.stringify(n))).audio,"autoGainControl","mozAutoGainControl"),e(n.audio,"noiseSuppression","mozNoiseSuppression")),t(n)},r&&r.prototype.getSettings){let t=r.prototype.getSettings;r.prototype.getSettings=function(){let n=t.apply(this,arguments);return e(n,"mozAutoGainControl","autoGainControl"),e(n,"mozNoiseSuppression","noiseSuppression"),n}}if(r&&r.prototype.applyConstraints){let t=r.prototype.applyConstraints;r.prototype.applyConstraints=function(n){return"audio"===this.kind&&"object"==typeof n&&(e(n=JSON.parse(JSON.stringify(n)),"autoGainControl","mozAutoGainControl"),e(n,"noiseSuppression","mozNoiseSuppression")),t.apply(this,[n])}}}}function W(e,t){e.navigator.mediaDevices&&"getDisplayMedia"in e.navigator.mediaDevices||!e.navigator.mediaDevices||(e.navigator.mediaDevices.getDisplayMedia=function(n){if(!(n&&n.video)){let e=new DOMException("getDisplayMedia without video constraints is undefined");return e.name="NotFoundError",e.code=8,Promise.reject(e)}return!0===n.video?n.video={mediaSource:t}:n.video.mediaSource=t,e.navigator.mediaDevices.getUserMedia(n)})}function H(e){"object"==typeof e&&e.RTCTrackEvent&&"receiver"in e.RTCTrackEvent.prototype&&!("transceiver"in e.RTCTrackEvent.prototype)&&Object.defineProperty(e.RTCTrackEvent.prototype,"transceiver",{get(){return{receiver:this.receiver}}})}function Y(e,t){if("object"!=typeof e||!(e.RTCPeerConnection||e.mozRTCPeerConnection))return;!e.RTCPeerConnection&&e.mozRTCPeerConnection&&(e.RTCPeerConnection=e.mozRTCPeerConnection),t.version<53&&["setLocalDescription","setRemoteDescription","addIceCandidate"].forEach(function(t){let n=e.RTCPeerConnection.prototype[t];e.RTCPeerConnection.prototype[t]=({[t](){return arguments[0]=new("addIceCandidate"===t?e.RTCIceCandidate:e.RTCSessionDescription)(arguments[0]),n.apply(this,arguments)}})[t]});let n={inboundrtp:"inbound-rtp",outboundrtp:"outbound-rtp",candidatepair:"candidate-pair",localcandidate:"local-candidate",remotecandidate:"remote-candidate"},r=e.RTCPeerConnection.prototype.getStats;e.RTCPeerConnection.prototype.getStats=function(){let[e,i,o]=arguments;return r.apply(this,[e||null]).then(e=>{if(t.version<53&&!i)try{e.forEach(e=>{e.type=n[e.type]||e.type})}catch(t){if("TypeError"!==t.name)throw t;e.forEach((t,r)=>{e.set(r,Object.assign({},t,{type:n[t.type]||t.type}))})}return e}).then(i,o)}}function K(e){if(!("object"==typeof e&&e.RTCPeerConnection&&e.RTCRtpSender)||e.RTCRtpSender&&"getStats"in e.RTCRtpSender.prototype)return;let t=e.RTCPeerConnection.prototype.getSenders;t&&(e.RTCPeerConnection.prototype.getSenders=function(){let e=t.apply(this,[]);return e.forEach(e=>e._pc=this),e});let n=e.RTCPeerConnection.prototype.addTrack;n&&(e.RTCPeerConnection.prototype.addTrack=function(){let e=n.apply(this,arguments);return e._pc=this,e}),e.RTCRtpSender.prototype.getStats=function(){return this.track?this._pc.getStats(this.track):Promise.resolve(new Map)}}function X(e){if(!("object"==typeof e&&e.RTCPeerConnection&&e.RTCRtpSender)||e.RTCRtpSender&&"getStats"in e.RTCRtpReceiver.prototype)return;let t=e.RTCPeerConnection.prototype.getReceivers;t&&(e.RTCPeerConnection.prototype.getReceivers=function(){let e=t.apply(this,[]);return e.forEach(e=>e._pc=this),e}),d(e,"track",e=>(e.receiver._pc=e.srcElement,e)),e.RTCRtpReceiver.prototype.getStats=function(){return this._pc.getStats(this.track)}}function q(e){!e.RTCPeerConnection||"removeStream"in e.RTCPeerConnection.prototype||(e.RTCPeerConnection.prototype.removeStream=function(e){m("removeStream","removeTrack"),this.getSenders().forEach(t=>{t.track&&e.getTracks().includes(t.track)&&this.removeTrack(t)})})}function Q(e){e.DataChannel&&!e.RTCDataChannel&&(e.RTCDataChannel=e.DataChannel)}function Z(e){if(!("object"==typeof e&&e.RTCPeerConnection))return;let t=e.RTCPeerConnection.prototype.addTransceiver;t&&(e.RTCPeerConnection.prototype.addTransceiver=function(){this.setParametersPromises=[];let e=arguments[1]&&arguments[1].sendEncodings;void 0===e&&(e=[]);let n=(e=[...e]).length>0;n&&e.forEach(e=>{if("rid"in e&&!/^[a-z0-9]{0,16}$/i.test(e.rid))throw TypeError("Invalid RID value provided.");if("scaleResolutionDownBy"in e&&!(parseFloat(e.scaleResolutionDownBy)>=1))throw RangeError("scale_resolution_down_by must be >= 1.0");if("maxFramerate"in e&&!(parseFloat(e.maxFramerate)>=0))throw RangeError("max_framerate must be >= 0.0")});let r=t.apply(this,arguments);if(n){let{sender:t}=r,n=t.getParameters();"encodings"in n&&(1!==n.encodings.length||0!==Object.keys(n.encodings[0]).length)||(n.encodings=e,t.sendEncodings=e,this.setParametersPromises.push(t.setParameters(n).then(()=>{delete t.sendEncodings}).catch(()=>{delete t.sendEncodings})))}return r})}function ee(e){if(!("object"==typeof e&&e.RTCRtpSender))return;let t=e.RTCRtpSender.prototype.getParameters;t&&(e.RTCRtpSender.prototype.getParameters=function(){let e=t.apply(this,arguments);return"encodings"in e||(e.encodings=[].concat(this.sendEncodings||[{}])),e})}function et(e){if(!("object"==typeof e&&e.RTCPeerConnection))return;let t=e.RTCPeerConnection.prototype.createOffer;e.RTCPeerConnection.prototype.createOffer=function(){return this.setParametersPromises&&this.setParametersPromises.length?Promise.all(this.setParametersPromises).then(()=>t.apply(this,arguments)).finally(()=>{this.setParametersPromises=[]}):t.apply(this,arguments)}}function en(e){if(!("object"==typeof e&&e.RTCPeerConnection))return;let t=e.RTCPeerConnection.prototype.createAnswer;e.RTCPeerConnection.prototype.createAnswer=function(){return this.setParametersPromises&&this.setParametersPromises.length?Promise.all(this.setParametersPromises).then(()=>t.apply(this,arguments)).finally(()=>{this.setParametersPromises=[]}):t.apply(this,arguments)}}e(V,"shimOnTrack",()=>H),e(V,"shimPeerConnection",()=>Y),e(V,"shimSenderGetStats",()=>K),e(V,"shimReceiverGetStats",()=>X),e(V,"shimRemoveStream",()=>q),e(V,"shimRTCDataChannel",()=>Q),e(V,"shimAddTransceiver",()=>Z),e(V,"shimGetParameters",()=>ee),e(V,"shimCreateOffer",()=>et),e(V,"shimCreateAnswer",()=>en),e(V,"shimGetUserMedia",()=>G),e(V,"shimGetDisplayMedia",()=>W);var er={};function ei(e){if("object"==typeof e&&e.RTCPeerConnection){if("getLocalStreams"in e.RTCPeerConnection.prototype||(e.RTCPeerConnection.prototype.getLocalStreams=function(){return this._localStreams||(this._localStreams=[]),this._localStreams}),!("addStream"in e.RTCPeerConnection.prototype)){let t=e.RTCPeerConnection.prototype.addTrack;e.RTCPeerConnection.prototype.addStream=function(e){this._localStreams||(this._localStreams=[]),this._localStreams.includes(e)||this._localStreams.push(e),e.getAudioTracks().forEach(n=>t.call(this,n,e)),e.getVideoTracks().forEach(n=>t.call(this,n,e))},e.RTCPeerConnection.prototype.addTrack=function(e,...n){return n&&n.forEach(e=>{this._localStreams?this._localStreams.includes(e)||this._localStreams.push(e):this._localStreams=[e]}),t.apply(this,arguments)}}"removeStream"in e.RTCPeerConnection.prototype||(e.RTCPeerConnection.prototype.removeStream=function(e){this._localStreams||(this._localStreams=[]);let t=this._localStreams.indexOf(e);if(-1===t)return;this._localStreams.splice(t,1);let n=e.getTracks();this.getSenders().forEach(e=>{n.includes(e.track)&&this.removeTrack(e)})})}}function eo(e){if("object"==typeof e&&e.RTCPeerConnection&&("getRemoteStreams"in e.RTCPeerConnection.prototype||(e.RTCPeerConnection.prototype.getRemoteStreams=function(){return this._remoteStreams?this._remoteStreams:[]}),!("onaddstream"in e.RTCPeerConnection.prototype))){Object.defineProperty(e.RTCPeerConnection.prototype,"onaddstream",{get(){return this._onaddstream},set(e){this._onaddstream&&(this.removeEventListener("addstream",this._onaddstream),this.removeEventListener("track",this._onaddstreampoly)),this.addEventListener("addstream",this._onaddstream=e),this.addEventListener("track",this._onaddstreampoly=e=>{e.streams.forEach(e=>{if(this._remoteStreams||(this._remoteStreams=[]),this._remoteStreams.includes(e))return;this._remoteStreams.push(e);let t=new Event("addstream");t.stream=e,this.dispatchEvent(t)})})}});let t=e.RTCPeerConnection.prototype.setRemoteDescription;e.RTCPeerConnection.prototype.setRemoteDescription=function(){let e=this;return this._onaddstreampoly||this.addEventListener("track",this._onaddstreampoly=function(t){t.streams.forEach(t=>{if(e._remoteStreams||(e._remoteStreams=[]),e._remoteStreams.indexOf(t)>=0)return;e._remoteStreams.push(t);let n=new Event("addstream");n.stream=t,e.dispatchEvent(n)})}),t.apply(e,arguments)}}}function es(e){if("object"!=typeof e||!e.RTCPeerConnection)return;let t=e.RTCPeerConnection.prototype,n=t.createOffer,r=t.createAnswer,i=t.setLocalDescription,o=t.setRemoteDescription,s=t.addIceCandidate;t.createOffer=function(e,t){let r=arguments.length>=2?arguments[2]:arguments[0],i=n.apply(this,[r]);return t?(i.then(e,t),Promise.resolve()):i},t.createAnswer=function(e,t){let n=arguments.length>=2?arguments[2]:arguments[0],i=r.apply(this,[n]);return t?(i.then(e,t),Promise.resolve()):i};let a=function(e,t,n){let r=i.apply(this,[e]);return n?(r.then(t,n),Promise.resolve()):r};t.setLocalDescription=a,a=function(e,t,n){let r=o.apply(this,[e]);return n?(r.then(t,n),Promise.resolve()):r},t.setRemoteDescription=a,a=function(e,t,n){let r=s.apply(this,[e]);return n?(r.then(t,n),Promise.resolve()):r},t.addIceCandidate=a}function ea(e){let t=e&&e.navigator;if(t.mediaDevices&&t.mediaDevices.getUserMedia){let e=t.mediaDevices,n=e.getUserMedia.bind(e);t.mediaDevices.getUserMedia=e=>n(ec(e))}!t.getUserMedia&&t.mediaDevices&&t.mediaDevices.getUserMedia&&(t.getUserMedia=(function(e,n,r){t.mediaDevices.getUserMedia(e).then(n,r)}).bind(t))}function ec(e){return e&&void 0!==e.video?Object.assign({},e,{video:function e(t){return g(t)?Object.keys(t).reduce(function(n,r){let i=g(t[r]),o=i?e(t[r]):t[r],s=i&&!Object.keys(o).length;return void 0===o||s?n:Object.assign(n,{[r]:o})},{}):t}(e.video)}):e}function el(e){if(!e.RTCPeerConnection)return;let t=e.RTCPeerConnection;e.RTCPeerConnection=function(e,n){if(e&&e.iceServers){let t=[];for(let n=0;n<e.iceServers.length;n++){let r=e.iceServers[n];void 0===r.urls&&r.url?(m("RTCIceServer.url","RTCIceServer.urls"),(r=JSON.parse(JSON.stringify(r))).urls=r.url,delete r.url,t.push(r)):t.push(e.iceServers[n])}e.iceServers=t}return new t(e,n)},e.RTCPeerConnection.prototype=t.prototype,"generateCertificate"in t&&Object.defineProperty(e.RTCPeerConnection,"generateCertificate",{get:()=>t.generateCertificate})}function ep(e){"object"==typeof e&&e.RTCTrackEvent&&"receiver"in e.RTCTrackEvent.prototype&&!("transceiver"in e.RTCTrackEvent.prototype)&&Object.defineProperty(e.RTCTrackEvent.prototype,"transceiver",{get(){return{receiver:this.receiver}}})}function ed(e){let t=e.RTCPeerConnection.prototype.createOffer;e.RTCPeerConnection.prototype.createOffer=function(e){if(e){void 0!==e.offerToReceiveAudio&&(e.offerToReceiveAudio=!!e.offerToReceiveAudio);let t=this.getTransceivers().find(e=>"audio"===e.receiver.track.kind);!1===e.offerToReceiveAudio&&t?"sendrecv"===t.direction?t.setDirection?t.setDirection("sendonly"):t.direction="sendonly":"recvonly"===t.direction&&(t.setDirection?t.setDirection("inactive"):t.direction="inactive"):!0!==e.offerToReceiveAudio||t||this.addTransceiver("audio",{direction:"recvonly"}),void 0!==e.offerToReceiveVideo&&(e.offerToReceiveVideo=!!e.offerToReceiveVideo);let n=this.getTransceivers().find(e=>"video"===e.receiver.track.kind);!1===e.offerToReceiveVideo&&n?"sendrecv"===n.direction?n.setDirection?n.setDirection("sendonly"):n.direction="sendonly":"recvonly"===n.direction&&(n.setDirection?n.setDirection("inactive"):n.direction="inactive"):!0!==e.offerToReceiveVideo||n||this.addTransceiver("video",{direction:"recvonly"})}return t.apply(this,arguments)}}function eh(e){"object"!=typeof e||e.AudioContext||(e.AudioContext=e.webkitAudioContext)}e(er,"shimLocalStreamsAPI",()=>ei),e(er,"shimRemoteStreamsAPI",()=>eo),e(er,"shimCallbacksAPI",()=>es),e(er,"shimGetUserMedia",()=>ea),e(er,"shimConstraints",()=>ec),e(er,"shimRTCIceServerUrls",()=>el),e(er,"shimTrackEventTransceiver",()=>ep),e(er,"shimCreateOfferLegacy",()=>ed),e(er,"shimAudioContext",()=>eh);var eu={};e(eu,"shimRTCIceCandidate",()=>eg),e(eu,"shimRTCIceCandidateRelayProtocol",()=>ey),e(eu,"shimMaxMessageSize",()=>e_),e(eu,"shimSendThrowTypeError",()=>eC),e(eu,"shimConnectionState",()=>eb),e(eu,"removeExtmapAllowMixed",()=>ev),e(eu,"shimAddIceCandidateNullOrEmpty",()=>ek),e(eu,"shimParameterlessSetLocalDescription",()=>eT);var ef={};let em={};function eg(e){if(!e.RTCIceCandidate||e.RTCIceCandidate&&"foundation"in e.RTCIceCandidate.prototype)return;let n=e.RTCIceCandidate;e.RTCIceCandidate=function(e){if("object"==typeof e&&e.candidate&&0===e.candidate.indexOf("a=")&&((e=JSON.parse(JSON.stringify(e))).candidate=e.candidate.substring(2)),e.candidate&&e.candidate.length){let r=new n(e),i=t(ef).parseCandidate(e.candidate);for(let e in i)e in r||Object.defineProperty(r,e,{value:i[e]});return r.toJSON=function(){return{candidate:r.candidate,sdpMid:r.sdpMid,sdpMLineIndex:r.sdpMLineIndex,usernameFragment:r.usernameFragment}},r}return new n(e)},e.RTCIceCandidate.prototype=n.prototype,d(e,"icecandidate",t=>(t.candidate&&Object.defineProperty(t,"candidate",{value:new e.RTCIceCandidate(t.candidate),writable:"false"}),t))}function ey(e){!e.RTCIceCandidate||e.RTCIceCandidate&&"relayProtocol"in e.RTCIceCandidate.prototype||d(e,"icecandidate",e=>{if(e.candidate){let n=t(ef).parseCandidate(e.candidate.candidate);"relay"===n.type&&(e.candidate.relayProtocol=({0:"tls",1:"tcp",2:"udp"})[n.priority>>24])}return e})}function e_(e,n){if(!e.RTCPeerConnection)return;"sctp"in e.RTCPeerConnection.prototype||Object.defineProperty(e.RTCPeerConnection.prototype,"sctp",{get(){return void 0===this._sctp?null:this._sctp}});let r=function(e){if(!e||!e.sdp)return!1;let n=t(ef).splitSections(e.sdp);return n.shift(),n.some(e=>{let n=t(ef).parseMLine(e);return n&&"application"===n.kind&&-1!==n.protocol.indexOf("SCTP")})},i=function(e){let t=e.sdp.match(/mozilla...THIS_IS_SDPARTA-(\d+)/);if(null===t||t.length<2)return -1;let n=parseInt(t[1],10);return n!=n?-1:n},o=function(e){let t=65536;return"firefox"===n.browser&&(t=n.version<57?-1===e?16384:2147483637:n.version<60?57===n.version?65535:65536:2147483637),t},s=function(e,r){let i=65536;"firefox"===n.browser&&57===n.version&&(i=65535);let o=t(ef).matchPrefix(e.sdp,"a=max-message-size:");return o.length>0?i=parseInt(o[0].substring(19),10):"firefox"===n.browser&&-1!==r&&(i=2147483637),i},a=e.RTCPeerConnection.prototype.setRemoteDescription;e.RTCPeerConnection.prototype.setRemoteDescription=function(){if(this._sctp=null,"chrome"===n.browser&&n.version>=76){let{sdpSemantics:e}=this.getConfiguration();"plan-b"===e&&Object.defineProperty(this,"sctp",{get(){return void 0===this._sctp?null:this._sctp},enumerable:!0,configurable:!0})}if(r(arguments[0])){let e;let t=i(arguments[0]),n=o(t),r=s(arguments[0],t);e=0===n&&0===r?Number.POSITIVE_INFINITY:0===n||0===r?Math.max(n,r):Math.min(n,r);let a={};Object.defineProperty(a,"maxMessageSize",{get:()=>e}),this._sctp=a}return a.apply(this,arguments)}}function eC(e){if(!(e.RTCPeerConnection&&"createDataChannel"in e.RTCPeerConnection.prototype))return;function t(e,t){let n=e.send;e.send=function(){let r=arguments[0],i=r.length||r.size||r.byteLength;if("open"===e.readyState&&t.sctp&&i>t.sctp.maxMessageSize)throw TypeError("Message too large (can send a maximum of "+t.sctp.maxMessageSize+" bytes)");return n.apply(e,arguments)}}let n=e.RTCPeerConnection.prototype.createDataChannel;e.RTCPeerConnection.prototype.createDataChannel=function(){let e=n.apply(this,arguments);return t(e,this),e},d(e,"datachannel",e=>(t(e.channel,e.target),e))}function eb(e){if(!e.RTCPeerConnection||"connectionState"in e.RTCPeerConnection.prototype)return;let t=e.RTCPeerConnection.prototype;Object.defineProperty(t,"connectionState",{get(){return({completed:"connected",checking:"connecting"})[this.iceConnectionState]||this.iceConnectionState},enumerable:!0,configurable:!0}),Object.defineProperty(t,"onconnectionstatechange",{get(){return this._onconnectionstatechange||null},set(e){this._onconnectionstatechange&&(this.removeEventListener("connectionstatechange",this._onconnectionstatechange),delete this._onconnectionstatechange),e&&this.addEventListener("connectionstatechange",this._onconnectionstatechange=e)},enumerable:!0,configurable:!0}),["setLocalDescription","setRemoteDescription"].forEach(e=>{let n=t[e];t[e]=function(){return this._connectionstatechangepoly||(this._connectionstatechangepoly=e=>{let t=e.target;if(t._lastConnectionState!==t.connectionState){t._lastConnectionState=t.connectionState;let n=new Event("connectionstatechange",e);t.dispatchEvent(n)}return e},this.addEventListener("iceconnectionstatechange",this._connectionstatechangepoly)),n.apply(this,arguments)}})}function ev(e,t){if(!e.RTCPeerConnection||"chrome"===t.browser&&t.version>=71||"safari"===t.browser&&t.version>=605)return;let n=e.RTCPeerConnection.prototype.setRemoteDescription;e.RTCPeerConnection.prototype.setRemoteDescription=function(t){if(t&&t.sdp&&-1!==t.sdp.indexOf("\na=extmap-allow-mixed")){let n=t.sdp.split("\n").filter(e=>"a=extmap-allow-mixed"!==e.trim()).join("\n");e.RTCSessionDescription&&t instanceof e.RTCSessionDescription?arguments[0]=new e.RTCSessionDescription({type:t.type,sdp:n}):t.sdp=n}return n.apply(this,arguments)}}function ek(e,t){if(!(e.RTCPeerConnection&&e.RTCPeerConnection.prototype))return;let n=e.RTCPeerConnection.prototype.addIceCandidate;n&&0!==n.length&&(e.RTCPeerConnection.prototype.addIceCandidate=function(){return arguments[0]?("chrome"===t.browser&&t.version<78||"firefox"===t.browser&&t.version<68||"safari"===t.browser)&&arguments[0]&&""===arguments[0].candidate?Promise.resolve():n.apply(this,arguments):(arguments[1]&&arguments[1].apply(null),Promise.resolve())})}function eT(e,t){if(!(e.RTCPeerConnection&&e.RTCPeerConnection.prototype))return;let n=e.RTCPeerConnection.prototype.setLocalDescription;n&&0!==n.length&&(e.RTCPeerConnection.prototype.setLocalDescription=function(){let e=arguments[0]||{};if("object"!=typeof e||e.type&&e.sdp)return n.apply(this,arguments);if(!(e={type:e.type,sdp:e.sdp}).type)switch(this.signalingState){case"stable":case"have-local-offer":case"have-remote-pranswer":e.type="offer";break;default:e.type="answer"}return e.sdp||"offer"!==e.type&&"answer"!==e.type?n.apply(this,[e]):("offer"===e.type?this.createOffer:this.createAnswer).apply(this).then(e=>n.apply(this,[e]))})}em.generateIdentifier=function(){return Math.random().toString(36).substring(2,12)},em.localCName=em.generateIdentifier(),em.splitLines=function(e){return e.trim().split("\n").map(e=>e.trim())},em.splitSections=function(e){return e.split("\nm=").map((e,t)=>(t>0?"m="+e:e).trim()+"\r\n")},em.getDescription=function(e){let t=em.splitSections(e);return t&&t[0]},em.getMediaSections=function(e){let t=em.splitSections(e);return t.shift(),t},em.matchPrefix=function(e,t){return em.splitLines(e).filter(e=>0===e.indexOf(t))},em.parseCandidate=function(e){let t;let n={foundation:(t=0===e.indexOf("a=candidate:")?e.substring(12).split(" "):e.substring(10).split(" "))[0],component:{1:"rtp",2:"rtcp"}[t[1]]||t[1],protocol:t[2].toLowerCase(),priority:parseInt(t[3],10),ip:t[4],address:t[4],port:parseInt(t[5],10),type:t[7]};for(let e=8;e<t.length;e+=2)switch(t[e]){case"raddr":n.relatedAddress=t[e+1];break;case"rport":n.relatedPort=parseInt(t[e+1],10);break;case"tcptype":n.tcpType=t[e+1];break;case"ufrag":n.ufrag=t[e+1],n.usernameFragment=t[e+1];break;default:void 0===n[t[e]]&&(n[t[e]]=t[e+1])}return n},em.writeCandidate=function(e){let t=[];t.push(e.foundation);let n=e.component;"rtp"===n?t.push(1):"rtcp"===n?t.push(2):t.push(n),t.push(e.protocol.toUpperCase()),t.push(e.priority),t.push(e.address||e.ip),t.push(e.port);let r=e.type;return t.push("typ"),t.push(r),"host"!==r&&e.relatedAddress&&e.relatedPort&&(t.push("raddr"),t.push(e.relatedAddress),t.push("rport"),t.push(e.relatedPort)),e.tcpType&&"tcp"===e.protocol.toLowerCase()&&(t.push("tcptype"),t.push(e.tcpType)),(e.usernameFragment||e.ufrag)&&(t.push("ufrag"),t.push(e.usernameFragment||e.ufrag)),"candidate:"+t.join(" ")},em.parseIceOptions=function(e){return e.substring(14).split(" ")},em.parseRtpMap=function(e){let t=e.substring(9).split(" "),n={payloadType:parseInt(t.shift(),10)};return t=t[0].split("/"),n.name=t[0],n.clockRate=parseInt(t[1],10),n.channels=3===t.length?parseInt(t[2],10):1,n.numChannels=n.channels,n},em.writeRtpMap=function(e){let t=e.payloadType;void 0!==e.preferredPayloadType&&(t=e.preferredPayloadType);let n=e.channels||e.numChannels||1;return"a=rtpmap:"+t+" "+e.name+"/"+e.clockRate+(1!==n?"/"+n:"")+"\r\n"},em.parseExtmap=function(e){let t=e.substring(9).split(" ");return{id:parseInt(t[0],10),direction:t[0].indexOf("/")>0?t[0].split("/")[1]:"sendrecv",uri:t[1],attributes:t.slice(2).join(" ")}},em.writeExtmap=function(e){return"a=extmap:"+(e.id||e.preferredId)+(e.direction&&"sendrecv"!==e.direction?"/"+e.direction:"")+" "+e.uri+(e.attributes?" "+e.attributes:"")+"\r\n"},em.parseFmtp=function(e){let t;let n={},r=e.substring(e.indexOf(" ")+1).split(";");for(let e=0;e<r.length;e++)n[(t=r[e].trim().split("="))[0].trim()]=t[1];return n},em.writeFmtp=function(e){let t="",n=e.payloadType;if(void 0!==e.preferredPayloadType&&(n=e.preferredPayloadType),e.parameters&&Object.keys(e.parameters).length){let r=[];Object.keys(e.parameters).forEach(t=>{void 0!==e.parameters[t]?r.push(t+"="+e.parameters[t]):r.push(t)}),t+="a=fmtp:"+n+" "+r.join(";")+"\r\n"}return t},em.parseRtcpFb=function(e){let t=e.substring(e.indexOf(" ")+1).split(" ");return{type:t.shift(),parameter:t.join(" ")}},em.writeRtcpFb=function(e){let t="",n=e.payloadType;return void 0!==e.preferredPayloadType&&(n=e.preferredPayloadType),e.rtcpFeedback&&e.rtcpFeedback.length&&e.rtcpFeedback.forEach(e=>{t+="a=rtcp-fb:"+n+" "+e.type+(e.parameter&&e.parameter.length?" "+e.parameter:"")+"\r\n"}),t},em.parseSsrcMedia=function(e){let t=e.indexOf(" "),n={ssrc:parseInt(e.substring(7,t),10)},r=e.indexOf(":",t);return r>-1?(n.attribute=e.substring(t+1,r),n.value=e.substring(r+1)):n.attribute=e.substring(t+1),n},em.parseSsrcGroup=function(e){let t=e.substring(13).split(" ");return{semantics:t.shift(),ssrcs:t.map(e=>parseInt(e,10))}},em.getMid=function(e){let t=em.matchPrefix(e,"a=mid:")[0];if(t)return t.substring(6)},em.parseFingerprint=function(e){let t=e.substring(14).split(" ");return{algorithm:t[0].toLowerCase(),value:t[1].toUpperCase()}},em.getDtlsParameters=function(e,t){return{role:"auto",fingerprints:em.matchPrefix(e+t,"a=fingerprint:").map(em.parseFingerprint)}},em.writeDtlsParameters=function(e,t){let n="a=setup:"+t+"\r\n";return e.fingerprints.forEach(e=>{n+="a=fingerprint:"+e.algorithm+" "+e.value+"\r\n"}),n},em.parseCryptoLine=function(e){let t=e.substring(9).split(" ");return{tag:parseInt(t[0],10),cryptoSuite:t[1],keyParams:t[2],sessionParams:t.slice(3)}},em.writeCryptoLine=function(e){return"a=crypto:"+e.tag+" "+e.cryptoSuite+" "+("object"==typeof e.keyParams?em.writeCryptoKeyParams(e.keyParams):e.keyParams)+(e.sessionParams?" "+e.sessionParams.join(" "):"")+"\r\n"},em.parseCryptoKeyParams=function(e){if(0!==e.indexOf("inline:"))return null;let t=e.substring(7).split("|");return{keyMethod:"inline",keySalt:t[0],lifeTime:t[1],mkiValue:t[2]?t[2].split(":")[0]:void 0,mkiLength:t[2]?t[2].split(":")[1]:void 0}},em.writeCryptoKeyParams=function(e){return e.keyMethod+":"+e.keySalt+(e.lifeTime?"|"+e.lifeTime:"")+(e.mkiValue&&e.mkiLength?"|"+e.mkiValue+":"+e.mkiLength:"")},em.getCryptoParameters=function(e,t){return em.matchPrefix(e+t,"a=crypto:").map(em.parseCryptoLine)},em.getIceParameters=function(e,t){let n=em.matchPrefix(e+t,"a=ice-ufrag:")[0],r=em.matchPrefix(e+t,"a=ice-pwd:")[0];return n&&r?{usernameFragment:n.substring(12),password:r.substring(10)}:null},em.writeIceParameters=function(e){let t="a=ice-ufrag:"+e.usernameFragment+"\r\na=ice-pwd:"+e.password+"\r\n";return e.iceLite&&(t+="a=ice-lite\r\n"),t},em.parseRtpParameters=function(e){let t={codecs:[],headerExtensions:[],fecMechanisms:[],rtcp:[]},n=em.splitLines(e)[0].split(" ");t.profile=n[2];for(let r=3;r<n.length;r++){let i=n[r],o=em.matchPrefix(e,"a=rtpmap:"+i+" ")[0];if(o){let n=em.parseRtpMap(o),r=em.matchPrefix(e,"a=fmtp:"+i+" ");switch(n.parameters=r.length?em.parseFmtp(r[0]):{},n.rtcpFeedback=em.matchPrefix(e,"a=rtcp-fb:"+i+" ").map(em.parseRtcpFb),t.codecs.push(n),n.name.toUpperCase()){case"RED":case"ULPFEC":t.fecMechanisms.push(n.name.toUpperCase())}}}em.matchPrefix(e,"a=extmap:").forEach(e=>{t.headerExtensions.push(em.parseExtmap(e))});let r=em.matchPrefix(e,"a=rtcp-fb:* ").map(em.parseRtcpFb);return t.codecs.forEach(e=>{r.forEach(t=>{e.rtcpFeedback.find(e=>e.type===t.type&&e.parameter===t.parameter)||e.rtcpFeedback.push(t)})}),t},em.writeRtpDescription=function(e,t){let n="";n+="m="+e+" "+(t.codecs.length>0?"9":"0")+" "+(t.profile||"UDP/TLS/RTP/SAVPF")+" "+t.codecs.map(e=>void 0!==e.preferredPayloadType?e.preferredPayloadType:e.payloadType).join(" ")+"\r\nc=IN IP4 0.0.0.0\r\na=rtcp:9 IN IP4 0.0.0.0\r\n",t.codecs.forEach(e=>{n+=em.writeRtpMap(e)+em.writeFmtp(e)+em.writeRtcpFb(e)});let r=0;return t.codecs.forEach(e=>{e.maxptime>r&&(r=e.maxptime)}),r>0&&(n+="a=maxptime:"+r+"\r\n"),t.headerExtensions&&t.headerExtensions.forEach(e=>{n+=em.writeExtmap(e)}),n},em.parseRtpEncodingParameters=function(e){let t;let n=[],r=em.parseRtpParameters(e),i=-1!==r.fecMechanisms.indexOf("RED"),o=-1!==r.fecMechanisms.indexOf("ULPFEC"),s=em.matchPrefix(e,"a=ssrc:").map(e=>em.parseSsrcMedia(e)).filter(e=>"cname"===e.attribute),a=s.length>0&&s[0].ssrc,c=em.matchPrefix(e,"a=ssrc-group:FID").map(e=>e.substring(17).split(" ").map(e=>parseInt(e,10)));c.length>0&&c[0].length>1&&c[0][0]===a&&(t=c[0][1]),r.codecs.forEach(e=>{if("RTX"===e.name.toUpperCase()&&e.parameters.apt){let r={ssrc:a,codecPayloadType:parseInt(e.parameters.apt,10)};a&&t&&(r.rtx={ssrc:t}),n.push(r),i&&((r=JSON.parse(JSON.stringify(r))).fec={ssrc:a,mechanism:o?"red+ulpfec":"red"},n.push(r))}}),0===n.length&&a&&n.push({ssrc:a});let l=em.matchPrefix(e,"b=");return l.length&&(l=0===l[0].indexOf("b=TIAS:")?parseInt(l[0].substring(7),10):0===l[0].indexOf("b=AS:")?950*parseInt(l[0].substring(5),10)-16e3:void 0,n.forEach(e=>{e.maxBitrate=l})),n},em.parseRtcpParameters=function(e){let t={},n=em.matchPrefix(e,"a=ssrc:").map(e=>em.parseSsrcMedia(e)).filter(e=>"cname"===e.attribute)[0];n&&(t.cname=n.value,t.ssrc=n.ssrc);let r=em.matchPrefix(e,"a=rtcp-rsize");t.reducedSize=r.length>0,t.compound=0===r.length;let i=em.matchPrefix(e,"a=rtcp-mux");return t.mux=i.length>0,t},em.writeRtcpParameters=function(e){let t="";return e.reducedSize&&(t+="a=rtcp-rsize\r\n"),e.mux&&(t+="a=rtcp-mux\r\n"),void 0!==e.ssrc&&e.cname&&(t+="a=ssrc:"+e.ssrc+" cname:"+e.cname+"\r\n"),t},em.parseMsid=function(e){let t;let n=em.matchPrefix(e,"a=msid:");if(1===n.length)return{stream:(t=n[0].substring(7).split(" "))[0],track:t[1]};let r=em.matchPrefix(e,"a=ssrc:").map(e=>em.parseSsrcMedia(e)).filter(e=>"msid"===e.attribute);if(r.length>0)return{stream:(t=r[0].value.split(" "))[0],track:t[1]}},em.parseSctpDescription=function(e){let t;let n=em.parseMLine(e),r=em.matchPrefix(e,"a=max-message-size:");r.length>0&&(t=parseInt(r[0].substring(19),10)),isNaN(t)&&(t=65536);let i=em.matchPrefix(e,"a=sctp-port:");if(i.length>0)return{port:parseInt(i[0].substring(12),10),protocol:n.fmt,maxMessageSize:t};let o=em.matchPrefix(e,"a=sctpmap:");if(o.length>0){let e=o[0].substring(10).split(" ");return{port:parseInt(e[0],10),protocol:e[1],maxMessageSize:t}}},em.writeSctpDescription=function(e,t){let n=[];return n="DTLS/SCTP"!==e.protocol?["m="+e.kind+" 9 "+e.protocol+" "+t.protocol+"\r\n","c=IN IP4 0.0.0.0\r\n","a=sctp-port:"+t.port+"\r\n"]:["m="+e.kind+" 9 "+e.protocol+" "+t.port+"\r\n","c=IN IP4 0.0.0.0\r\n","a=sctpmap:"+t.port+" "+t.protocol+" 65535\r\n"],void 0!==t.maxMessageSize&&n.push("a=max-message-size:"+t.maxMessageSize+"\r\n"),n.join("")},em.generateSessionId=function(){return Math.random().toString().substr(2,22)},em.writeSessionBoilerplate=function(e,t,n){return"v=0\r\no="+(n||"thisisadapterortc")+" "+(e||em.generateSessionId())+" "+(void 0!==t?t:2)+" IN IP4 127.0.0.1\r\ns=-\r\nt=0 0\r\n"},em.getDirection=function(e,t){let n=em.splitLines(e);for(let e=0;e<n.length;e++)switch(n[e]){case"a=sendrecv":case"a=sendonly":case"a=recvonly":case"a=inactive":return n[e].substring(2)}return t?em.getDirection(t):"sendrecv"},em.getKind=function(e){return em.splitLines(e)[0].split(" ")[0].substring(2)},em.isRejected=function(e){return"0"===e.split(" ",2)[1]},em.parseMLine=function(e){let t=em.splitLines(e)[0].substring(2).split(" ");return{kind:t[0],port:parseInt(t[1],10),protocol:t[2],fmt:t.slice(3).join(" ")}},em.parseOLine=function(e){let t=em.matchPrefix(e,"o=")[0].substring(2).split(" ");return{username:t[0],sessionId:t[1],sessionVersion:parseInt(t[2],10),netType:t[3],addressType:t[4],address:t[5]}},em.isValidSDP=function(e){if("string"!=typeof e||0===e.length)return!1;let t=em.splitLines(e);for(let e=0;e<t.length;e++)if(t[e].length<2||"="!==t[e].charAt(1))return!1;return!0},ef=em;let eS=function({window:e}={},t={shimChrome:!0,shimFirefox:!0,shimSafari:!0}){let n=function(e){let t={browser:null,version:null};if(void 0===e||!e.navigator||!e.navigator.userAgent)return t.browser="Not a browser.",t;let{navigator:n}=e;if(n.userAgentData&&n.userAgentData.brands){let e=n.userAgentData.brands.find(e=>"Chromium"===e.brand);if(e)return{browser:"chrome",version:parseInt(e.version,10)}}return n.mozGetUserMedia?(t.browser="firefox",t.version=p(n.userAgent,/Firefox\/(\d+)\./,1)):n.webkitGetUserMedia||!1===e.isSecureContext&&e.webkitRTCPeerConnection?(t.browser="chrome",t.version=p(n.userAgent,/Chrom(e|ium)\/(\d+)\./,2)):e.RTCPeerConnection&&n.userAgent.match(/AppleWebKit\/(\d+)\./)?(t.browser="safari",t.version=p(n.userAgent,/AppleWebKit\/(\d+)\./,1),t.supportsUnifiedPlan=e.RTCRtpTransceiver&&"currentDirection"in e.RTCRtpTransceiver.prototype):t.browser="Not a supported browser.",t}(e),r={browserDetails:n,commonShim:eu,extractVersion:p,disableLog:h,disableWarnings:u,sdp:ef};switch(n.browser){case"chrome":if(!j||!j.shimPeerConnection||!t.shimChrome){f("Chrome shim is not included in this adapter release.");break}if(null===n.version){f("Chrome shim can not determine version, not shimming.");break}f("adapter.js shimming chrome."),r.browserShim=j,ek(e,n),eT(e,n),j.shimGetUserMedia(e,n),j.shimMediaStream(e,n),j.shimPeerConnection(e,n),j.shimOnTrack(e,n),j.shimAddTrackRemoveTrack(e,n),j.shimGetSendersWithDtmf(e,n),j.shimSenderReceiverGetStats(e,n),j.fixNegotiationNeeded(e,n),eg(e,n),ey(e,n),eb(e,n),e_(e,n),eC(e,n),ev(e,n);break;case"firefox":if(!V||!V.shimPeerConnection||!t.shimFirefox){f("Firefox shim is not included in this adapter release.");break}f("adapter.js shimming firefox."),r.browserShim=V,ek(e,n),eT(e,n),V.shimGetUserMedia(e,n),V.shimPeerConnection(e,n),V.shimOnTrack(e,n),V.shimRemoveStream(e,n),V.shimSenderGetStats(e,n),V.shimReceiverGetStats(e,n),V.shimRTCDataChannel(e,n),V.shimAddTransceiver(e,n),V.shimGetParameters(e,n),V.shimCreateOffer(e,n),V.shimCreateAnswer(e,n),eg(e,n),eb(e,n),e_(e,n),eC(e,n);break;case"safari":if(!er||!t.shimSafari){f("Safari shim is not included in this adapter release.");break}f("adapter.js shimming safari."),r.browserShim=er,ek(e,n),eT(e,n),er.shimRTCIceServerUrls(e,n),er.shimCreateOfferLegacy(e,n),er.shimCallbacksAPI(e,n),er.shimLocalStreamsAPI(e,n),er.shimRemoteStreamsAPI(e,n),er.shimTrackEventTransceiver(e,n),er.shimGetUserMedia(e,n),er.shimAudioContext(e,n),eg(e,n),ey(e,n),e_(e,n),eC(e,n),ev(e,n);break;default:f("Unsupported browser!")}return r}({window:"undefined"==typeof window?void 0:window}),eR=eS.default||eS,eP=new class{isWebRTCSupported(){return"undefined"!=typeof RTCPeerConnection}isBrowserSupported(){let e=this.getBrowser(),t=this.getVersion();return!!this.supportedBrowsers.includes(e)&&("chrome"===e?t>=this.minChromeVersion:"firefox"===e?t>=this.minFirefoxVersion:"safari"===e&&!this.isIOS&&t>=this.minSafariVersion)}getBrowser(){return eR.browserDetails.browser}getVersion(){return eR.browserDetails.version||0}isUnifiedPlanSupported(){let e;let t=this.getBrowser(),n=eR.browserDetails.version||0;if("chrome"===t&&n<this.minChromeVersion)return!1;if("firefox"===t&&n>=this.minFirefoxVersion)return!0;if(!window.RTCRtpTransceiver||!("currentDirection"in RTCRtpTransceiver.prototype))return!1;let r=!1;try{(e=new RTCPeerConnection).addTransceiver("audio"),r=!0}catch(e){}finally{e&&e.close()}return r}toString(){return`Supports:
+    browser:${this.getBrowser()}
+    version:${this.getVersion()}
+    isIOS:${this.isIOS}
+    isWebRTCSupported:${this.isWebRTCSupported()}
+    isBrowserSupported:${this.isBrowserSupported()}
+    isUnifiedPlanSupported:${this.isUnifiedPlanSupported()}`}constructor(){this.isIOS="undefined"!=typeof navigator&&["iPad","iPhone","iPod"].includes(navigator.platform),this.supportedBrowsers=["firefox","chrome","safari"],this.minFirefoxVersion=59,this.minChromeVersion=72,this.minSafariVersion=605}},ew=e=>!e||/^[A-Za-z0-9]+(?:[ _-][A-Za-z0-9]+)*$/.test(e),eE=()=>Math.random().toString(36).slice(2),eD={iceServers:[{urls:"stun:stun.l.google.com:19302"},{urls:["turn:eu-0.turn.peerjs.com:3478","turn:us-0.turn.peerjs.com:3478"],username:"peerjs",credential:"peerjsp"}],sdpSemantics:"unified-plan"},ex=new class extends n{noop(){}blobToArrayBuffer(e,t){let n=new FileReader;return n.onload=function(e){e.target&&t(e.target.result)},n.readAsArrayBuffer(e),n}binaryStringToArrayBuffer(e){let t=new Uint8Array(e.length);for(let n=0;n<e.length;n++)t[n]=255&e.charCodeAt(n);return t.buffer}isSecure(){return"https:"===location.protocol}constructor(...e){super(...e),this.CLOUD_HOST="0.peerjs.com",this.CLOUD_PORT=443,this.chunkedBrowsers={Chrome:1,chrome:1},this.defaultConfig=eD,this.browser=eP.getBrowser(),this.browserVersion=eP.getVersion(),this.pack=o,this.unpack=i,this.supports=function(){let e;let t={browser:eP.isBrowserSupported(),webRTC:eP.isWebRTCSupported(),audioVideo:!1,data:!1,binaryBlob:!1,reliable:!1};if(!t.webRTC)return t;try{let n;e=new RTCPeerConnection(eD),t.audioVideo=!0;try{n=e.createDataChannel("_PEERJSTEST",{ordered:!0}),t.data=!0,t.reliable=!!n.ordered;try{n.binaryType="blob",t.binaryBlob=!eP.isIOS}catch(e){}}catch(e){}finally{n&&n.close()}}catch(e){}finally{e&&e.close()}return t}(),this.validateId=ew,this.randomToken=eE}};(_=P||(P={}))[_.Disabled=0]="Disabled",_[_.Errors=1]="Errors",_[_.Warnings=2]="Warnings",_[_.All=3]="All";var eI=new class{get logLevel(){return this._logLevel}set logLevel(e){this._logLevel=e}log(...e){this._logLevel>=3&&this._print(3,...e)}warn(...e){this._logLevel>=2&&this._print(2,...e)}error(...e){this._logLevel>=1&&this._print(1,...e)}setLogFunction(e){this._print=e}_print(e,...t){let n=["PeerJS: ",...t];for(let e in n)n[e]instanceof Error&&(n[e]="("+n[e].name+") "+n[e].message);e>=3?console.log(...n):e>=2?console.warn("WARNING",...n):e>=1&&console.error("ERROR",...n)}constructor(){this._logLevel=0}},eM={},eO=Object.prototype.hasOwnProperty,ej="~";function eL(){}function eA(e,t,n){this.fn=e,this.context=t,this.once=n||!1}function eB(e,t,n,r,i){if("function"!=typeof n)throw TypeError("The listener must be a function");var o=new eA(n,r||e,i),s=ej?ej+t:t;return e._events[s]?e._events[s].fn?e._events[s]=[e._events[s],o]:e._events[s].push(o):(e._events[s]=o,e._eventsCount++),e}function eF(e,t){0==--e._eventsCount?e._events=new eL:delete e._events[t]}function eU(){this._events=new eL,this._eventsCount=0}Object.create&&(eL.prototype=Object.create(null),new eL().__proto__||(ej=!1)),eU.prototype.eventNames=function(){var e,t,n=[];if(0===this._eventsCount)return n;for(t in e=this._events)eO.call(e,t)&&n.push(ej?t.slice(1):t);return Object.getOwnPropertySymbols?n.concat(Object.getOwnPropertySymbols(e)):n},eU.prototype.listeners=function(e){var t=ej?ej+e:e,n=this._events[t];if(!n)return[];if(n.fn)return[n.fn];for(var r=0,i=n.length,o=Array(i);r<i;r++)o[r]=n[r].fn;return o},eU.prototype.listenerCount=function(e){var t=ej?ej+e:e,n=this._events[t];return n?n.fn?1:n.length:0},eU.prototype.emit=function(e,t,n,r,i,o){var s=ej?ej+e:e;if(!this._events[s])return!1;var a,c,l=this._events[s],p=arguments.length;if(l.fn){switch(l.once&&this.removeListener(e,l.fn,void 0,!0),p){case 1:return l.fn.call(l.context),!0;case 2:return l.fn.call(l.context,t),!0;case 3:return l.fn.call(l.context,t,n),!0;case 4:return l.fn.call(l.context,t,n,r),!0;case 5:return l.fn.call(l.context,t,n,r,i),!0;case 6:return l.fn.call(l.context,t,n,r,i,o),!0}for(c=1,a=Array(p-1);c<p;c++)a[c-1]=arguments[c];l.fn.apply(l.context,a)}else{var d,h=l.length;for(c=0;c<h;c++)switch(l[c].once&&this.removeListener(e,l[c].fn,void 0,!0),p){case 1:l[c].fn.call(l[c].context);break;case 2:l[c].fn.call(l[c].context,t);break;case 3:l[c].fn.call(l[c].context,t,n);break;case 4:l[c].fn.call(l[c].context,t,n,r);break;default:if(!a)for(d=1,a=Array(p-1);d<p;d++)a[d-1]=arguments[d];l[c].fn.apply(l[c].context,a)}}return!0},eU.prototype.on=function(e,t,n){return eB(this,e,t,n,!1)},eU.prototype.once=function(e,t,n){return eB(this,e,t,n,!0)},eU.prototype.removeListener=function(e,t,n,r){var i=ej?ej+e:e;if(!this._events[i])return this;if(!t)return eF(this,i),this;var o=this._events[i];if(o.fn)o.fn!==t||r&&!o.once||n&&o.context!==n||eF(this,i);else{for(var s=0,a=[],c=o.length;s<c;s++)(o[s].fn!==t||r&&!o[s].once||n&&o[s].context!==n)&&a.push(o[s]);a.length?this._events[i]=1===a.length?a[0]:a:eF(this,i)}return this},eU.prototype.removeAllListeners=function(e){var t;return e?(t=ej?ej+e:e,this._events[t]&&eF(this,t)):(this._events=new eL,this._eventsCount=0),this},eU.prototype.off=eU.prototype.removeListener,eU.prototype.addListener=eU.prototype.on,eU.prefixed=ej,eU.EventEmitter=eU,eM=eU,(C=w||(w={})).Data="data",C.Media="media",(b=E||(E={})).BrowserIncompatible="browser-incompatible",b.Disconnected="disconnected",b.InvalidID="invalid-id",b.InvalidKey="invalid-key",b.Network="network",b.PeerUnavailable="peer-unavailable",b.SslUnavailable="ssl-unavailable",b.ServerError="server-error",b.SocketError="socket-error",b.SocketClosed="socket-closed",b.UnavailableID="unavailable-id",b.WebRTC="webrtc",(v=D||(D={})).NegotiationFailed="negotiation-failed",v.ConnectionClosed="connection-closed",(k=x||(x={})).NotOpenYet="not-open-yet",k.MessageToBig="message-too-big",(T=I||(I={})).Binary="binary",T.BinaryUTF8="binary-utf8",T.JSON="json",T.None="raw",(S=M||(M={})).Message="message",S.Disconnected="disconnected",S.Error="error",S.Close="close",(R=O||(O={})).Heartbeat="HEARTBEAT",R.Candidate="CANDIDATE",R.Offer="OFFER",R.Answer="ANSWER",R.Open="OPEN",R.Error="ERROR",R.IdTaken="ID-TAKEN",R.InvalidKey="INVALID-KEY",R.Leave="LEAVE",R.Expire="EXPIRE";var ez={};ez=JSON.parse('{"name":"peerjs","version":"1.5.4","keywords":["peerjs","webrtc","p2p","rtc"],"description":"PeerJS client","homepage":"https://peerjs.com","bugs":{"url":"https://github.com/peers/peerjs/issues"},"repository":{"type":"git","url":"https://github.com/peers/peerjs"},"license":"MIT","contributors":["Michelle Bu <michelle@michellebu.com>","afrokick <devbyru@gmail.com>","ericz <really.ez@gmail.com>","Jairo <kidandcat@gmail.com>","Jonas Gloning <34194370+jonasgloning@users.noreply.github.com>","Jairo Caro-Accino Viciana <jairo@galax.be>","Carlos Caballero <carlos.caballero.gonzalez@gmail.com>","hc <hheennrryy@gmail.com>","Muhammad Asif <capripio@gmail.com>","PrashoonB <prashoonbhattacharjee@gmail.com>","Harsh Bardhan Mishra <47351025+HarshCasper@users.noreply.github.com>","akotynski <aleksanderkotbury@gmail.com>","lmb <i@lmb.io>","Jairooo <jairocaro@msn.com>","Moritz Stückler <moritz.stueckler@gmail.com>","Simon <crydotsnakegithub@gmail.com>","Denis Lukov <denismassters@gmail.com>","Philipp Hancke <fippo@andyet.net>","Hans Oksendahl <hansoksendahl@gmail.com>","Jess <jessachandler@gmail.com>","khankuan <khankuan@gmail.com>","DUODVK <kurmanov.work@gmail.com>","XiZhao <kwang1imsa@gmail.com>","Matthias Lohr <matthias@lohr.me>","=frank tree <=frnktrb@googlemail.com>","Andre Eckardt <aeckardt@outlook.com>","Chris Cowan <agentme49@gmail.com>","Alex Chuev <alex@chuev.com>","alxnull <alxnull@e.mail.de>","Yemel Jardi <angel.jardi@gmail.com>","Ben Parnell <benjaminparnell.94@gmail.com>","Benny Lichtner <bennlich@gmail.com>","fresheneesz <bitetrudpublic@gmail.com>","bob.barstead@exaptive.com <bob.barstead@exaptive.com>","chandika <chandika@gmail.com>","emersion <contact@emersion.fr>","Christopher Van <cvan@users.noreply.github.com>","eddieherm <edhermoso@gmail.com>","Eduardo Pinho <enet4mikeenet@gmail.com>","Evandro Zanatta <ezanatta@tray.net.br>","Gardner Bickford <gardner@users.noreply.github.com>","Gian Luca <gianluca.cecchi@cynny.com>","PatrickJS <github@gdi2290.com>","jonnyf <github@jonathanfoss.co.uk>","Hizkia Felix <hizkifw@gmail.com>","Hristo Oskov <hristo.oskov@gmail.com>","Isaac Madwed <i.madwed@gmail.com>","Ilya Konanykhin <ilya.konanykhin@gmail.com>","jasonbarry <jasbarry@me.com>","Jonathan Burke <jonathan.burke.1311@googlemail.com>","Josh Hamit <josh.hamit@gmail.com>","Jordan Austin <jrax86@gmail.com>","Joel Wetzell <jwetzell@yahoo.com>","xizhao <kevin.wang@cloudera.com>","Alberto Torres <kungfoobar@gmail.com>","Jonathan Mayol <mayoljonathan@gmail.com>","Jefferson Felix <me@jsfelix.dev>","Rolf Erik Lekang <me@rolflekang.com>","Kevin Mai-Husan Chia <mhchia@users.noreply.github.com>","Pepijn de Vos <pepijndevos@gmail.com>","JooYoung <qkdlql@naver.com>","Tobias Speicher <rootcommander@gmail.com>","Steve Blaurock <sblaurock@gmail.com>","Kyrylo Shegeda <shegeda@ualberta.ca>","Diwank Singh Tomer <singh@diwank.name>","Sören Balko <Soeren.Balko@gmail.com>","Arpit Solanki <solankiarpit1997@gmail.com>","Yuki Ito <yuki@gnnk.net>","Artur Zayats <zag2art@gmail.com>"],"funding":{"type":"opencollective","url":"https://opencollective.com/peer"},"collective":{"type":"opencollective","url":"https://opencollective.com/peer"},"files":["dist/*"],"sideEffects":["lib/global.ts","lib/supports.ts"],"main":"dist/bundler.cjs","module":"dist/bundler.mjs","browser-minified":"dist/peerjs.min.js","browser-unminified":"dist/peerjs.js","browser-minified-msgpack":"dist/serializer.msgpack.mjs","types":"dist/types.d.ts","engines":{"node":">= 14"},"targets":{"types":{"source":"lib/exports.ts"},"main":{"source":"lib/exports.ts","sourceMap":{"inlineSources":true}},"module":{"source":"lib/exports.ts","includeNodeModules":["eventemitter3"],"sourceMap":{"inlineSources":true}},"browser-minified":{"context":"browser","outputFormat":"global","optimize":true,"engines":{"browsers":"chrome >= 83, edge >= 83, firefox >= 80, safari >= 15"},"source":"lib/global.ts"},"browser-unminified":{"context":"browser","outputFormat":"global","optimize":false,"engines":{"browsers":"chrome >= 83, edge >= 83, firefox >= 80, safari >= 15"},"source":"lib/global.ts"},"browser-minified-msgpack":{"context":"browser","outputFormat":"esmodule","isLibrary":true,"optimize":true,"engines":{"browsers":"chrome >= 83, edge >= 83, firefox >= 102, safari >= 15"},"source":"lib/dataconnection/StreamConnection/MsgPack.ts"}},"scripts":{"contributors":"git-authors-cli --print=false && prettier --write package.json && git add package.json package-lock.json && git commit -m \\"chore(contributors): update and sort contributors list\\"","check":"tsc --noEmit && tsc -p e2e/tsconfig.json --noEmit","watch":"parcel watch","build":"rm -rf dist && parcel build","prepublishOnly":"npm run build","test":"jest","test:watch":"jest --watch","coverage":"jest --coverage --collectCoverageFrom=\\"./lib/**\\"","format":"prettier --write .","format:check":"prettier --check .","semantic-release":"semantic-release","e2e":"wdio run e2e/wdio.local.conf.ts","e2e:bstack":"wdio run e2e/wdio.bstack.conf.ts"},"devDependencies":{"@parcel/config-default":"^2.9.3","@parcel/packager-ts":"^2.9.3","@parcel/transformer-typescript-tsc":"^2.9.3","@parcel/transformer-typescript-types":"^2.9.3","@semantic-release/changelog":"^6.0.1","@semantic-release/git":"^10.0.1","@swc/core":"^1.3.27","@swc/jest":"^0.2.24","@types/jasmine":"^4.3.4","@wdio/browserstack-service":"^8.11.2","@wdio/cli":"^8.11.2","@wdio/globals":"^8.11.2","@wdio/jasmine-framework":"^8.11.2","@wdio/local-runner":"^8.11.2","@wdio/spec-reporter":"^8.11.2","@wdio/types":"^8.10.4","http-server":"^14.1.1","jest":"^29.3.1","jest-environment-jsdom":"^29.3.1","mock-socket":"^9.0.0","parcel":"^2.9.3","prettier":"^3.0.0","semantic-release":"^21.0.0","ts-node":"^10.9.1","typescript":"^5.0.0","wdio-geckodriver-service":"^5.0.1"},"dependencies":{"@msgpack/msgpack":"^2.8.0","eventemitter3":"^4.0.7","peerjs-js-binarypack":"^2.1.0","webrtc-adapter":"^9.0.0"},"alias":{"process":false,"buffer":false}}');class eN extends eM.EventEmitter{start(e,t){this._id=e;let n=`${this._baseUrl}&id=${e}&token=${t}`;!this._socket&&this._disconnected&&(this._socket=new WebSocket(n+"&version="+ez.version),this._disconnected=!1,this._socket.onmessage=e=>{let t;try{t=JSON.parse(e.data),eI.log("Server message received:",t)}catch(t){eI.log("Invalid server message",e.data);return}this.emit(M.Message,t)},this._socket.onclose=e=>{this._disconnected||(eI.log("Socket closed.",e),this._cleanup(),this._disconnected=!0,this.emit(M.Disconnected))},this._socket.onopen=()=>{this._disconnected||(this._sendQueuedMessages(),eI.log("Socket open"),this._scheduleHeartbeat())})}_scheduleHeartbeat(){this._wsPingTimer=setTimeout(()=>{this._sendHeartbeat()},this.pingInterval)}_sendHeartbeat(){if(!this._wsOpen()){eI.log("Cannot send heartbeat, because socket closed");return}let e=JSON.stringify({type:O.Heartbeat});this._socket.send(e),this._scheduleHeartbeat()}_wsOpen(){return!!this._socket&&1===this._socket.readyState}_sendQueuedMessages(){let e=[...this._messagesQueue];for(let t of(this._messagesQueue=[],e))this.send(t)}send(e){if(this._disconnected)return;if(!this._id){this._messagesQueue.push(e);return}if(!e.type){this.emit(M.Error,"Invalid message");return}if(!this._wsOpen())return;let t=JSON.stringify(e);this._socket.send(t)}close(){this._disconnected||(this._cleanup(),this._disconnected=!0)}_cleanup(){this._socket&&(this._socket.onopen=this._socket.onmessage=this._socket.onclose=null,this._socket.close(),this._socket=void 0),clearTimeout(this._wsPingTimer)}constructor(e,t,n,r,i,o=5e3){super(),this.pingInterval=o,this._disconnected=!0,this._messagesQueue=[],this._baseUrl=(e?"wss://":"ws://")+t+":"+n+r+"peerjs?key="+i}}class e${startConnection(e){let t=this._startPeerConnection();if(this.connection.peerConnection=t,this.connection.type===w.Media&&e._stream&&this._addTracksToConnection(e._stream,t),e.originator){let n=this.connection,r={ordered:!!e.reliable},i=t.createDataChannel(n.label,r);n._initializeDataChannel(i),this._makeOffer()}else this.handleSDP("OFFER",e.sdp)}_startPeerConnection(){eI.log("Creating RTCPeerConnection.");let e=new RTCPeerConnection(this.connection.provider.options.config);return this._setupListeners(e),e}_setupListeners(e){let t=this.connection.peer,n=this.connection.connectionId,r=this.connection.type,i=this.connection.provider;eI.log("Listening for ICE candidates."),e.onicecandidate=e=>{e.candidate&&e.candidate.candidate&&(eI.log(`Received ICE candidates for ${t}:`,e.candidate),i.socket.send({type:O.Candidate,payload:{candidate:e.candidate,type:r,connectionId:n},dst:t}))},e.oniceconnectionstatechange=()=>{switch(e.iceConnectionState){case"failed":eI.log("iceConnectionState is failed, closing connections to "+t),this.connection.emitError(D.NegotiationFailed,"Negotiation of connection to "+t+" failed."),this.connection.close();break;case"closed":eI.log("iceConnectionState is closed, closing connections to "+t),this.connection.emitError(D.ConnectionClosed,"Connection to "+t+" closed."),this.connection.close();break;case"disconnected":eI.log("iceConnectionState changed to disconnected on the connection with "+t);break;case"completed":e.onicecandidate=()=>{}}this.connection.emit("iceStateChanged",e.iceConnectionState)},eI.log("Listening for data channel"),e.ondatachannel=e=>{eI.log("Received data channel");let r=e.channel;i.getConnection(t,n)._initializeDataChannel(r)},eI.log("Listening for remote stream"),e.ontrack=e=>{eI.log("Received remote stream");let r=e.streams[0],o=i.getConnection(t,n);o.type===w.Media&&this._addStreamToMediaConnection(r,o)}}cleanup(){eI.log("Cleaning up PeerConnection to "+this.connection.peer);let e=this.connection.peerConnection;if(!e)return;this.connection.peerConnection=null,e.onicecandidate=e.oniceconnectionstatechange=e.ondatachannel=e.ontrack=()=>{};let t="closed"!==e.signalingState,n=!1,r=this.connection.dataChannel;r&&(n=!!r.readyState&&"closed"!==r.readyState),(t||n)&&e.close()}async _makeOffer(){let e=this.connection.peerConnection,t=this.connection.provider;try{let n=await e.createOffer(this.connection.options.constraints);eI.log("Created offer."),this.connection.options.sdpTransform&&"function"==typeof this.connection.options.sdpTransform&&(n.sdp=this.connection.options.sdpTransform(n.sdp)||n.sdp);try{await e.setLocalDescription(n),eI.log("Set localDescription:",n,`for:${this.connection.peer}`);let r={sdp:n,type:this.connection.type,connectionId:this.connection.connectionId,metadata:this.connection.metadata};if(this.connection.type===w.Data){let e=this.connection;r={...r,label:e.label,reliable:e.reliable,serialization:e.serialization}}t.socket.send({type:O.Offer,payload:r,dst:this.connection.peer})}catch(e){"OperationError: Failed to set local offer sdp: Called in wrong state: kHaveRemoteOffer"!=e&&(t.emitError(E.WebRTC,e),eI.log("Failed to setLocalDescription, ",e))}}catch(e){t.emitError(E.WebRTC,e),eI.log("Failed to createOffer, ",e)}}async _makeAnswer(){let e=this.connection.peerConnection,t=this.connection.provider;try{let n=await e.createAnswer();eI.log("Created answer."),this.connection.options.sdpTransform&&"function"==typeof this.connection.options.sdpTransform&&(n.sdp=this.connection.options.sdpTransform(n.sdp)||n.sdp);try{await e.setLocalDescription(n),eI.log("Set localDescription:",n,`for:${this.connection.peer}`),t.socket.send({type:O.Answer,payload:{sdp:n,type:this.connection.type,connectionId:this.connection.connectionId},dst:this.connection.peer})}catch(e){t.emitError(E.WebRTC,e),eI.log("Failed to setLocalDescription, ",e)}}catch(e){t.emitError(E.WebRTC,e),eI.log("Failed to create answer, ",e)}}async handleSDP(e,t){t=new RTCSessionDescription(t);let n=this.connection.peerConnection,r=this.connection.provider;eI.log("Setting remote description",t);try{await n.setRemoteDescription(t),eI.log(`Set remoteDescription:${e} for:${this.connection.peer}`),"OFFER"===e&&await this._makeAnswer()}catch(e){r.emitError(E.WebRTC,e),eI.log("Failed to setRemoteDescription, ",e)}}async handleCandidate(e){eI.log("handleCandidate:",e);try{await this.connection.peerConnection.addIceCandidate(e),eI.log(`Added ICE candidate for:${this.connection.peer}`)}catch(e){this.connection.provider.emitError(E.WebRTC,e),eI.log("Failed to handleCandidate, ",e)}}_addTracksToConnection(e,t){if(eI.log(`add tracks from stream ${e.id} to peer connection`),!t.addTrack)return eI.error("Your browser does't support RTCPeerConnection#addTrack. Ignored.");e.getTracks().forEach(n=>{t.addTrack(n,e)})}_addStreamToMediaConnection(e,t){eI.log(`add stream ${e.id} to media connection ${t.connectionId}`),t.addStream(e)}constructor(e){this.connection=e}}class eJ extends eM.EventEmitter{emitError(e,t){eI.error("Error:",t),this.emit("error",new eV(`${e}`,t))}}class eV extends Error{constructor(e,t){"string"==typeof t?super(t):(super(),Object.assign(this,t)),this.type=e}}class eG extends eJ{get open(){return this._open}constructor(e,t,n){super(),this.peer=e,this.provider=t,this.options=n,this._open=!1,this.metadata=n.metadata}}class eW extends eG{get type(){return w.Media}get localStream(){return this._localStream}get remoteStream(){return this._remoteStream}_initializeDataChannel(e){this.dataChannel=e,this.dataChannel.onopen=()=>{eI.log(`DC#${this.connectionId} dc connection success`),this.emit("willCloseOnRemote")},this.dataChannel.onclose=()=>{eI.log(`DC#${this.connectionId} dc closed for:`,this.peer),this.close()}}addStream(e){eI.log("Receiving stream",e),this._remoteStream=e,super.emit("stream",e)}handleMessage(e){let t=e.type,n=e.payload;switch(e.type){case O.Answer:this._negotiator.handleSDP(t,n.sdp),this._open=!0;break;case O.Candidate:this._negotiator.handleCandidate(n.candidate);break;default:eI.warn(`Unrecognized message type:${t} from peer:${this.peer}`)}}answer(e,t={}){if(this._localStream){eI.warn("Local stream already exists on this MediaConnection. Are you answering a call twice?");return}for(let n of(this._localStream=e,t&&t.sdpTransform&&(this.options.sdpTransform=t.sdpTransform),this._negotiator.startConnection({...this.options._payload,_stream:e}),this.provider._getMessages(this.connectionId)))this.handleMessage(n);this._open=!0}close(){this._negotiator&&(this._negotiator.cleanup(),this._negotiator=null),this._localStream=null,this._remoteStream=null,this.provider&&(this.provider._removeConnection(this),this.provider=null),this.options&&this.options._stream&&(this.options._stream=null),this.open&&(this._open=!1,super.emit("close"))}constructor(e,t,n){super(e,t,n),this._localStream=this.options._stream,this.connectionId=this.options.connectionId||eW.ID_PREFIX+ex.randomToken(),this._negotiator=new e$(this),this._localStream&&this._negotiator.startConnection({_stream:this._localStream,originator:!0})}}eW.ID_PREFIX="mc_";class eH{_buildRequest(e){let t=this._options.secure?"https":"http",{host:n,port:r,path:i,key:o}=this._options,s=new URL(`${t}://${n}:${r}${i}${o}/${e}`);return s.searchParams.set("ts",`${Date.now()}${Math.random()}`),s.searchParams.set("version",ez.version),fetch(s.href,{referrerPolicy:this._options.referrerPolicy})}async retrieveId(){try{let e=await this._buildRequest("id");if(200!==e.status)throw Error(`Error. Status:${e.status}`);return e.text()}catch(t){eI.error("Error retrieving ID",t);let e="";throw"/"===this._options.path&&this._options.host!==ex.CLOUD_HOST&&(e=" If you passed in a `path` to your self-hosted PeerServer, you'll also need to pass in that same path when creating a new Peer."),Error("Could not get an ID from the server."+e)}}async listAllPeers(){try{let e=await this._buildRequest("peers");if(200!==e.status){if(401===e.status){let e="";throw e=this._options.host===ex.CLOUD_HOST?"It looks like you're using the cloud server. You can email team@peerjs.com to enable peer listing for your API key.":"You need to enable `allow_discovery` on your self-hosted PeerServer to use this feature.",Error("It doesn't look like you have permission to list peers IDs. "+e)}throw Error(`Error. Status:${e.status}`)}return e.json()}catch(e){throw eI.error("Error retrieving list peers",e),Error("Could not get list peers from the server."+e)}}constructor(e){this._options=e}}class eY extends eG{get type(){return w.Data}_initializeDataChannel(e){this.dataChannel=e,this.dataChannel.onopen=()=>{eI.log(`DC#${this.connectionId} dc connection success`),this._open=!0,this.emit("open")},this.dataChannel.onmessage=e=>{eI.log(`DC#${this.connectionId} dc onmessage:`,e.data)},this.dataChannel.onclose=()=>{eI.log(`DC#${this.connectionId} dc closed for:`,this.peer),this.close()}}close(e){if(e?.flush){this.send({__peerData:{type:"close"}});return}this._negotiator&&(this._negotiator.cleanup(),this._negotiator=null),this.provider&&(this.provider._removeConnection(this),this.provider=null),this.dataChannel&&(this.dataChannel.onopen=null,this.dataChannel.onmessage=null,this.dataChannel.onclose=null,this.dataChannel=null),this.open&&(this._open=!1,super.emit("close"))}send(e,t=!1){if(!this.open){this.emitError(x.NotOpenYet,"Connection is not open. You should listen for the `open` event before sending messages.");return}return this._send(e,t)}async handleMessage(e){let t=e.payload;switch(e.type){case O.Answer:await this._negotiator.handleSDP(e.type,t.sdp);break;case O.Candidate:await this._negotiator.handleCandidate(t.candidate);break;default:eI.warn("Unrecognized message type:",e.type,"from peer:",this.peer)}}constructor(e,t,n){super(e,t,n),this.connectionId=this.options.connectionId||eY.ID_PREFIX+eE(),this.label=this.options.label||this.connectionId,this.reliable=!!this.options.reliable,this._negotiator=new e$(this),this._negotiator.startConnection(this.options._payload||{originator:!0,reliable:this.reliable})}}eY.ID_PREFIX="dc_",eY.MAX_BUFFERED_AMOUNT=8388608;class eK extends eY{get bufferSize(){return this._bufferSize}_initializeDataChannel(e){super._initializeDataChannel(e),this.dataChannel.binaryType="arraybuffer",this.dataChannel.addEventListener("message",e=>this._handleDataMessage(e))}_bufferedSend(e){(this._buffering||!this._trySend(e))&&(this._buffer.push(e),this._bufferSize=this._buffer.length)}_trySend(e){if(!this.open)return!1;if(this.dataChannel.bufferedAmount>eY.MAX_BUFFERED_AMOUNT)return this._buffering=!0,setTimeout(()=>{this._buffering=!1,this._tryBuffer()},50),!1;try{this.dataChannel.send(e)}catch(e){return eI.error(`DC#:${this.connectionId} Error when sending:`,e),this._buffering=!0,this.close(),!1}return!0}_tryBuffer(){if(!this.open||0===this._buffer.length)return;let e=this._buffer[0];this._trySend(e)&&(this._buffer.shift(),this._bufferSize=this._buffer.length,this._tryBuffer())}close(e){if(e?.flush){this.send({__peerData:{type:"close"}});return}this._buffer=[],this._bufferSize=0,super.close()}constructor(...e){super(...e),this._buffer=[],this._bufferSize=0,this._buffering=!1}}class eX extends eK{close(e){super.close(e),this._chunkedData={}}_handleDataMessage({data:e}){let t=i(e),n=t.__peerData;if(n){if("close"===n.type){this.close();return}this._handleChunk(t);return}this.emit("data",t)}_handleChunk(e){let t=e.__peerData,n=this._chunkedData[t]||{data:[],count:0,total:e.total};if(n.data[e.n]=new Uint8Array(e.data),n.count++,this._chunkedData[t]=n,n.total===n.count){delete this._chunkedData[t];let e=function(e){let t=0;for(let n of e)t+=n.byteLength;let n=new Uint8Array(t),r=0;for(let t of e)n.set(t,r),r+=t.byteLength;return n}(n.data);this._handleDataMessage({data:e})}}_send(e,t){let n=o(e);if(n instanceof Promise)return this._send_blob(n);if(!t&&n.byteLength>this.chunker.chunkedMTU){this._sendChunks(n);return}this._bufferedSend(n)}async _send_blob(e){let t=await e;if(t.byteLength>this.chunker.chunkedMTU){this._sendChunks(t);return}this._bufferedSend(t)}_sendChunks(e){let t=this.chunker.chunk(e);for(let e of(eI.log(`DC#${this.connectionId} Try to send ${t.length} chunks...`),t))this.send(e,!0)}constructor(e,t,r){super(e,t,r),this.chunker=new n,this.serialization=I.Binary,this._chunkedData={}}}class eq extends eK{_handleDataMessage({data:e}){super.emit("data",e)}_send(e,t){this._bufferedSend(e)}constructor(...e){super(...e),this.serialization=I.None}}class eQ extends eK{_handleDataMessage({data:e}){let t=this.parse(this.decoder.decode(e)),n=t.__peerData;if(n&&"close"===n.type){this.close();return}this.emit("data",t)}_send(e,t){let n=this.encoder.encode(this.stringify(e));if(n.byteLength>=ex.chunkedMTU){this.emitError(x.MessageToBig,"Message too big for JSON channel");return}this._bufferedSend(n)}constructor(...e){super(...e),this.serialization=I.JSON,this.encoder=new TextEncoder,this.decoder=new TextDecoder,this.stringify=JSON.stringify,this.parse=JSON.parse}}class eZ extends eJ{get id(){return this._id}get options(){return this._options}get open(){return this._open}get socket(){return this._socket}get connections(){let e=Object.create(null);for(let[t,n]of this._connections)e[t]=n;return e}get destroyed(){return this._destroyed}get disconnected(){return this._disconnected}_createServerConnection(){let e=new eN(this._options.secure,this._options.host,this._options.port,this._options.path,this._options.key,this._options.pingInterval);return e.on(M.Message,e=>{this._handleMessage(e)}),e.on(M.Error,e=>{this._abort(E.SocketError,e)}),e.on(M.Disconnected,()=>{this.disconnected||(this.emitError(E.Network,"Lost connection to server."),this.disconnect())}),e.on(M.Close,()=>{this.disconnected||this._abort(E.SocketClosed,"Underlying socket is already closed.")}),e}_initialize(e){this._id=e,this.socket.start(e,this._options.token)}_handleMessage(e){let t=e.type,n=e.payload,r=e.src;switch(t){case O.Open:this._lastServerId=this.id,this._open=!0,this.emit("open",this.id);break;case O.Error:this._abort(E.ServerError,n.msg);break;case O.IdTaken:this._abort(E.UnavailableID,`ID "${this.id}" is taken`);break;case O.InvalidKey:this._abort(E.InvalidKey,`API KEY "${this._options.key}" is invalid`);break;case O.Leave:eI.log(`Received leave message from ${r}`),this._cleanupPeer(r),this._connections.delete(r);break;case O.Expire:this.emitError(E.PeerUnavailable,`Could not connect to peer ${r}`);break;case O.Offer:{let e=n.connectionId,t=this.getConnection(r,e);if(t&&(t.close(),eI.warn(`Offer received for existing Connection ID:${e}`)),n.type===w.Media){let i=new eW(r,this,{connectionId:e,_payload:n,metadata:n.metadata});t=i,this._addConnection(r,t),this.emit("call",i)}else if(n.type===w.Data){let i=new this._serializers[n.serialization](r,this,{connectionId:e,_payload:n,metadata:n.metadata,label:n.label,serialization:n.serialization,reliable:n.reliable});t=i,this._addConnection(r,t),this.emit("connection",i)}else{eI.warn(`Received malformed connection type:${n.type}`);return}for(let n of this._getMessages(e))t.handleMessage(n);break}default:{if(!n){eI.warn(`You received a malformed message from ${r} of type ${t}`);return}let i=n.connectionId,o=this.getConnection(r,i);o&&o.peerConnection?o.handleMessage(e):i?this._storeMessage(i,e):eI.warn("You received an unrecognized message:",e)}}}_storeMessage(e,t){this._lostMessages.has(e)||this._lostMessages.set(e,[]),this._lostMessages.get(e).push(t)}_getMessages(e){let t=this._lostMessages.get(e);return t?(this._lostMessages.delete(e),t):[]}connect(e,t={}){if(t={serialization:"default",...t},this.disconnected){eI.warn("You cannot connect to a new Peer because you called .disconnect() on this Peer and ended your connection with the server. You can create a new Peer to reconnect, or call reconnect on this peer if you believe its ID to still be available."),this.emitError(E.Disconnected,"Cannot connect to new Peer after disconnecting from server.");return}let n=new this._serializers[t.serialization](e,this,t);return this._addConnection(e,n),n}call(e,t,n={}){if(this.disconnected){eI.warn("You cannot connect to a new Peer because you called .disconnect() on this Peer and ended your connection with the server. You can create a new Peer to reconnect."),this.emitError(E.Disconnected,"Cannot connect to new Peer after disconnecting from server.");return}if(!t){eI.error("To call a peer, you must provide a stream from your browser's `getUserMedia`.");return}let r=new eW(e,this,{...n,_stream:t});return this._addConnection(e,r),r}_addConnection(e,t){eI.log(`add connection ${t.type}:${t.connectionId} to peerId:${e}`),this._connections.has(e)||this._connections.set(e,[]),this._connections.get(e).push(t)}_removeConnection(e){let t=this._connections.get(e.peer);if(t){let n=t.indexOf(e);-1!==n&&t.splice(n,1)}this._lostMessages.delete(e.connectionId)}getConnection(e,t){let n=this._connections.get(e);if(!n)return null;for(let e of n)if(e.connectionId===t)return e;return null}_delayedAbort(e,t){setTimeout(()=>{this._abort(e,t)},0)}_abort(e,t){eI.error("Aborting!"),this.emitError(e,t),this._lastServerId?this.disconnect():this.destroy()}destroy(){this.destroyed||(eI.log(`Destroy peer with ID:${this.id}`),this.disconnect(),this._cleanup(),this._destroyed=!0,this.emit("close"))}_cleanup(){for(let e of this._connections.keys())this._cleanupPeer(e),this._connections.delete(e);this.socket.removeAllListeners()}_cleanupPeer(e){let t=this._connections.get(e);if(t)for(let e of t)e.close()}disconnect(){if(this.disconnected)return;let e=this.id;eI.log(`Disconnect peer with ID:${e}`),this._disconnected=!0,this._open=!1,this.socket.close(),this._lastServerId=e,this._id=null,this.emit("disconnected",e)}reconnect(){if(this.disconnected&&!this.destroyed)eI.log(`Attempting reconnection to server with ID ${this._lastServerId}`),this._disconnected=!1,this._initialize(this._lastServerId);else if(this.destroyed)throw Error("This peer cannot reconnect to the server. It has already been destroyed.");else if(this.disconnected||this.open)throw Error(`Peer ${this.id} cannot reconnect because it is not disconnected from the server!`);else eI.error("In a hurry? We're still trying to make the initial connection!")}listAllPeers(e=e=>{}){this._api.listAllPeers().then(t=>e(t)).catch(e=>this._abort(E.ServerError,e))}constructor(e,t){let n;if(super(),this._serializers={raw:eq,json:eQ,binary:eX,"binary-utf8":eX,default:eX},this._id=null,this._lastServerId=null,this._destroyed=!1,this._disconnected=!1,this._open=!1,this._connections=new Map,this._lostMessages=new Map,e&&e.constructor==Object?t=e:e&&(n=e.toString()),t={debug:0,host:ex.CLOUD_HOST,port:ex.CLOUD_PORT,path:"/",key:eZ.DEFAULT_KEY,token:ex.randomToken(),config:ex.defaultConfig,referrerPolicy:"strict-origin-when-cross-origin",serializers:{},...t},this._options=t,this._serializers={...this._serializers,...this.options.serializers},"/"===this._options.host&&(this._options.host=window.location.hostname),this._options.path&&("/"!==this._options.path[0]&&(this._options.path="/"+this._options.path),"/"!==this._options.path[this._options.path.length-1]&&(this._options.path+="/")),void 0===this._options.secure&&this._options.host!==ex.CLOUD_HOST?this._options.secure=ex.isSecure():this._options.host==ex.CLOUD_HOST&&(this._options.secure=!0),this._options.logFunction&&eI.setLogFunction(this._options.logFunction),eI.logLevel=this._options.debug||0,this._api=new eH(t),this._socket=this._createServerConnection(),!ex.supports.audioVideo&&!ex.supports.data){this._delayedAbort(E.BrowserIncompatible,"The current browser does not support WebRTC");return}if(n&&!ex.validateId(n)){this._delayedAbort(E.InvalidID,`ID "${n}" is invalid`);return}n?this._initialize(n):this._api.retrieveId().then(e=>this._initialize(e)).catch(e=>this._abort(E.ServerError,e))}}eZ.DEFAULT_KEY="peerjs",window.peerjs={Peer:eZ,util:ex},window.Peer=eZ})();
+//# sourceMappingURL=peerjs.min.js.map
+</script>
+<script>
+/* ============================================================
+   校园历险记  ·  游戏数据
+============================================================ */
+'use strict';
+
+// 文生图立绘接口（精致二次元 · 国风学生装）
+function portraitURL(p){
+  return 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt='
+    + encodeURIComponent(p+'，精致二次元角色立绘，端庄得体的国风学生制服，高领长袖，衣着整齐保守不暴露，唯美细腻厚涂插画，大师级画质，柔和校园光影，高清半身像')
+    + '&image_size=portrait_4_3';
+}
+
+/* ---------------- 30 名同窗（强度同模，机制各异） ----------------
+   hp/atk/def/range(格)/rate(每秒攻击)/crit/dodge/cost(金币)/unlock(解锁关)
+   ult: {name 大招名, fx 特效, pow 对全屏敌人的攻击力倍率, status?, special?}        */
+const CHARACTERS = [
+{id:1,name:'楚惊鸿',cls:'暴击手',emo:'🪬',color:'#ff6b8a',cost:70,hp:230,atk:26,def:6,range:2.7,rate:1.15,crit:.55,dodge:.05,type:'ranged',unlock:1,mech:'critsplash',
+ desc:'玻璃大炮。暴击率极高，暴击同时对目标周围造成50%溅射伤害。',
+ ult:{name:'惊鸿一箭',fx:'barrage',pow:8,status:{stun:.6}},
+ pic:'红马尾少女，手持长弓，眼神锐利，红黑配色国风劲装学生服'},
+
+{id:2,name:'赫连远',cls:'神枪手',emo:'🔫',color:'#7ec8ff',cost:80,hp:300,atk:20,def:8,range:4.4,rate:1.0,crit:.15,dodge:.05,type:'ranged',unlock:1,mech:'sharpshot',
+ desc:'全场最远射程。对满血敌人的第一发子弹伤害+60%。',
+ ult:{name:'万里穿杨',fx:'barrage2',pow:9},
+ pic:'冷峻短发少年，手持复古火枪，青蓝色制服披风，站姿挺拔'},
+
+{id:3,name:'苏映雪',cls:'冰霜法师',emo:'❄️',color:'#9fe6ff',cost:100,hp:340,atk:15,def:10,range:3.0,rate:.9,crit:.1,dodge:.05,type:'ranged',unlock:1,mech:'frost',
+ desc:'冰雪灵能：命中减速40%，并有12%概率冰冻敌人1秒。',
+ ult:{name:'千山暮雪',fx:'blizzard',pow:4,status:{freeze:4,slow:4}},
+ pic:'银白长发少女，发梢冰晶，手持雪花法杖，白青汉服元素冬装校服'},
+
+{id:4,name:'鲁班宝',cls:'发明家',emo:'🔨',color:'#ffc861',cost:100,hp:520,atk:8,def:20,range:1.7,rate:.8,crit:.05,dodge:.05,type:'ranged',unlock:1,mech:'inventor',
+ desc:'高血高防。每秒稳定生产20金币，是队伍的经济核心。',
+ ult:{name:'点石成金',fx:'gold',pow:3,special:'gold300'},
+ pic:'圆框眼镜少年，背着齿轮机关箱，土黄色工装风校服，笑容自信'},
+
+{id:5,name:'铁如山',cls:'盾卫',emo:'🛡',color:'#c9c2e8',cost:120,hp:950,atk:16,def:38,range:1.2,rate:.55,crit:.3,dodge:.25,type:'melee',unlock:1,mech:'shieldblock',
+ desc:'血、防、暴击、闪避四高的铁壁，攻速缓慢；30%概率格挡60%伤害。',
+ ult:{name:'不动如山',fx:'shield',pow:2,special:'shield6'},
+ pic:'高大魁梧少年，手持古风巨盾，玄铁色铠甲式校服，神情坚毅'},
+
+{id:6,name:'雷震子',cls:'雷霆法师',emo:'⚡',color:'#b69bff',cost:120,hp:330,atk:24,def:8,range:3.0,rate:.85,crit:.1,dodge:.05,type:'ranged',unlock:1,mech:'lightning',
+ desc:'25%概率电晕敌人1秒，20%概率引动连锁爆炸。',
+ ult:{name:'万雷天劫',fx:'thunder',pow:7,status:{stun:1.5}},
+ pic:'紫发张扬少年，周身电弧缠绕，紫黑道袍风格校服，掌心雷球'},
+
+{id:7,name:'朱烈焰',cls:'烈焰法师',emo:'🔥',color:'#ff8a5b',cost:100,hp:300,atk:14,def:8,range:2.8,rate:1.5,crit:.1,dodge:.05,type:'ranged',unlock:2,mech:'flame',
+ desc:'高攻速。命中附加灼烧，每层每秒8点伤害、持续3秒，可刷新。',
+ ult:{name:'九天焚炎',fx:'meteor',pow:6,status:{burn:3}},
+ pic:'赤发高马尾少女，火雀发饰，朱红汉服改良学生装，掌心火焰'},
+
+{id:8,name:'高飞',cls:'弹弓手',emo:'🪃',color:'#b5e08c',cost:100,hp:320,atk:19,def:8,range:3.2,rate:.9,crit:.2,dodge:.05,type:'ranged',unlock:2,mech:'pierce',
+ desc:'回旋弹可穿透沿途所有敌人，直线清道夫。',
+ ult:{name:'回旋风暴',fx:'barrage',pow:7},
+ pic:'阳光少年，手持弹弓，翠绿色短打校服，背着木质回旋镖'},
+
+{id:9,name:'风清扬',cls:'风语者',emo:'🌪',color:'#aee9d8',cost:160,hp:260,atk:12,def:6,range:2.6,rate:1.2,crit:.1,dodge:.1,type:'ranged',unlock:2,mech:'gust',
+ desc:'血量偏低。每次命中将敌人向后吹退0.6格。',
+ ult:{name:'罡风万里',fx:'wind',pow:4,status:{push:5}},
+ pic:'银发飘逸少年，青色大袖国风校服被风吹起，手持风翎扇'},
+
+{id:10,name:'鱼俱浪',cls:'叉兵',emo:'🔱',color:'#7fd4e8',cost:160,hp:560,atk:30,def:15,range:1.3,rate:.8,crit:.4,dodge:.1,type:'melee',unlock:2,mech:'trident',
+ desc:'攻击暴击双高的近战，每次命中击退敌人0.4格。',
+ ult:{name:'怒浪排叉',fx:'wind',pow:8,status:{push:2,stun:1}},
+ pic:'古铜色皮肤少年，手持三股叉，浪纹铠甲式校服，气势逼人'},
+
+{id:11,name:'叶灵枢',cls:'医仙',emo:'💊',color:'#8ff0b8',cost:110,hp:360,atk:7,def:12,range:2.4,rate:1.0,crit:.05,dodge:.1,type:'ranged',unlock:4,mech:'healer',
+ desc:'每秒治疗范围内友方1.5%最大生命，春风化雨。',
+ ult:{name:'妙手回春',fx:'heal',pow:4,special:'fullheal'},
+ pic:'温婉长发少女，挎着草药篮，淡绿汉服元素医女校服，柔光'},
+
+{id:12,name:'夜无踪',cls:'刺客',emo:'🗡',color:'#b9a0e8',cost:130,hp:300,atk:34,def:8,range:1.4,rate:1.4,crit:.4,dodge:.2,type:'melee',unlock:6,mech:'assassin',
+ desc:'每第四次攻击瞬移至最远处敌人身后发动绝杀。',
+ ult:{name:'十步一人',fx:'slash',pow:10},
+ pic:'黑衣兜帽少女，面纱半遮，暗紫色夜行衣改良校服，短刃寒光'},
+
+{id:13,name:'剑南春',cls:'剑客',emo:'⚔️',color:'#e8e0b0',cost:120,hp:480,atk:26,def:14,range:1.6,rate:1.2,crit:.25,dodge:.1,type:'melee',unlock:8,mech:'swordsman',
+ desc:'一剑横扫，同时斩击范围内最多3名敌人。',
+ ult:{name:'万剑归宗',fx:'blades',pow:8},
+ pic:'白衣剑客少年，腰悬长剑，月白色圆领袍校服，醉意潇洒'},
+
+{id:14,name:'白小绾',cls:'召唤师',emo:'📜',color:'#e6c8f0',cost:130,hp:340,atk:12,def:8,range:2.6,rate:.9,crit:.1,dodge:.1,type:'ranged',unlock:10,mech:'summoner',
+ desc:'每7秒召唤纸人灵，附身缠住一名敌人使其无法移动。',
+ ult:{name:'百鬼夜行',fx:'summon',pow:5,status:{stun:2}},
+ pic:'双丸子头少女，黄色符箓飞舞，浅紫巫女风国风校服'},
+
+{id:15,name:'青萝',cls:'毒师',emo:'🧪',color:'#9be07a',cost:110,hp:300,atk:10,def:8,range:2.8,rate:1.0,crit:.1,dodge:.1,type:'ranged',unlock:12,mech:'poisoner',
+ desc:'叠毒至多5层（每层12点/秒，4秒），毒杀后向周围传染。',
+ ult:{name:'万毒噬天',fx:'poison',pow:4,status:{poison:5}},
+ pic:'绿衣少女，手持陶制药瓶，苗银装饰的国风学生装，笑意神秘'},
+
+{id:16,name:'柳如烟',cls:'乐师',emo:'🎐',color:'#f0b8d8',cost:120,hp:320,atk:12,def:8,range:3.0,rate:1.0,crit:.1,dodge:.1,type:'ranged',unlock:14,mech:'bard',
+ desc:'灵音光环：范围内敌人减速20%，并多承受10%伤害。',
+ ult:{name:'一曲倾城',fx:'charm',pow:5,status:{stun:3}},
+ pic:'抱琵琶的柔美少女，粉色襦裙改良校服，落花环绕'},
+
+{id:17,name:'文曲',cls:'书生',emo:'📖',color:'#d8c8a8',cost:90,hp:320,atk:18,def:10,range:3.0,rate:.9,crit:.15,dodge:.05,type:'ranged',unlock:5,mech:'scholar',
+ desc:'妙笔生财：亲手击杀的敌人额外掉落3金币。',
+ ult:{name:'妙笔生花',fx:'gold',pow:4,special:'gold250buff'},
+ pic:'清秀少年，手持书卷毛笔，月白长衫书童校服，文气翩翩'},
+
+{id:18,name:'墨丹青',cls:'画师',emo:'🖌',color:'#9fb8e0',cost:110,hp:320,atk:20,def:8,range:2.8,rate:.85,crit:.15,dodge:.05,type:'ranged',unlock:7,mech:'painter',
+ desc:'每5秒在最远敌人脚下泼洒墨池，造成范围伤害。',
+ ult:{name:'泼墨山河',fx:'ink',pow:8},
+ pic:'丹青长发少女，画笔染墨，水墨色调汉服风校服，挥毫作画'},
+
+{id:19,name:'弈秋',cls:'棋手',emo:'♟',color:'#c8b890',cost:140,hp:360,atk:16,def:12,range:3.2,rate:.8,crit:.1,dodge:.1,type:'ranged',unlock:9,mech:'chesser',
+ desc:'棋子印记叠满3枚即眩晕敌人2秒，运筹帷幄。',
+ ult:{name:'星罗棋局',fx:'seal',pow:5,status:{stun:3}},
+ pic:'执黑子的冷静少年，黑白棋盘悬浮身前，棋纹暗色国风校服'},
+
+{id:20,name:'玄都',cls:'道士',emo:'☯️',color:'#cfe0b0',cost:130,hp:340,atk:22,def:10,range:3.2,rate:.95,crit:.15,dodge:.1,type:'ranged',unlock:11,mech:'taoist',
+ desc:'符箓跳跃连锁3个目标，15%概率以雷法震退1格。',
+ ult:{name:'五雷正法',fx:'thunder',pow:7,status:{stun:1.2,push:1}},
+ pic:'束发戴冠的少年道士，桃木剑与太极符，青黄道袍风校服'},
+
+{id:21,name:'释无尘',cls:'武僧',emo:'🧘',color:'#e8c890',cost:120,hp:720,atk:22,def:25,range:1.3,rate:.9,crit:.2,dodge:.1,type:'melee',unlock:13,mech:'monk',
+ desc:'金刚不坏；受击时30%概率以罗汉拳反击。',
+ ult:{name:'如来神掌',fx:'palm',pow:9,status:{push:2,stun:1}},
+ pic:'光头英武少年僧，佛珠护腕，赭黄色武僧服改良校服'},
+
+{id:22,name:'花想容',cls:'园丁',emo:'🌺',color:'#f09bb0',cost:100,hp:340,atk:14,def:10,range:2.6,rate:1.0,crit:.15,dodge:.1,type:'ranged',unlock:3,mech:'gardener',
+ desc:'荆棘藤蔓：20%概率定身0.8秒并造成流血。',
+ ult:{name:'万树繁花',fx:'bloom',pow:5,status:{root:3,bleed:3}},
+ pic:'花篮草帽少女，藤蔓花环，绯红色园艺风汉服校服'},
+
+{id:23,name:'庖丁',cls:'厨师',emo:'🍜',color:'#ffd098',cost:100,hp:400,atk:16,def:12,range:2.0,rate:1.0,crit:.1,dodge:.05,type:'ranged',unlock:5,mech:'chef',
+ desc:'犒赏光环：范围内友方攻击速度+20%。',
+ ult:{name:'满汉全席',fx:'feast',pow:4,special:'ratestbuff'},
+ pic:'憨厚少年，端着一碗面，白色厨师服样式国风校服，厨巾飘扬'},
+
+{id:24,name:'墨小机',cls:'机关师',emo:'⚙️',color:'#b8c4d8',cost:140,hp:420,atk:18,def:14,range:2.8,rate:.8,crit:.15,dodge:.05,type:'ranged',unlock:15,mech:'engineer',
+ desc:'一次发射3枚散射机关弩箭，远近皆宜。',
+ ult:{name:'千机齐发',fx:'turret',pow:8},
+ pic:'护目镜少女，背负机关弩臂，银灰色机关风校服，齿轮装饰'},
+
+{id:25,name:'霍奔',cls:'运动员',emo:'🏃',color:'#ffe08a',cost:110,hp:520,atk:24,def:14,range:1.6,rate:1.1,crit:.2,dodge:.15,type:'melee',unlock:3,mech:'runner',
+ desc:'飞冲撞阵：近战小范围伤害并轻微击退敌人。',
+ ult:{name:'雷霆冲刺',fx:'dash',pow:7,status:{push:3,stun:.8}},
+ pic:'短跑健将少年，金色运动风改良校服，红色发带，冲线姿态'},
+
+{id:26,name:'公孙舞',cls:'舞姬',emo:'💃',color:'#f0a8d0',cost:130,hp:360,atk:20,def:8,range:2.2,rate:1.3,crit:.2,dodge:.15,type:'melee',unlock:16,mech:'dancer',
+ desc:'剑舞回旋造成范围伤害；光环使友方闪避+10%。',
+ ult:{name:'霓裳羽衣',fx:'dance',pow:7},
+ pic:'水袖舞姬少女，华丽霓裳羽衣风校服，舞姿轻盈，花瓣纷飞'},
+
+{id:27,name:'闻人晓',cls:'记者',emo:'📷',color:'#8ad0e8',cost:110,hp:300,atk:16,def:8,range:3.4,rate:.9,crit:.15,dodge:.1,type:'ranged',unlock:17,mech:'reporter',
+ desc:'闪光灯15%致晕0.6秒；被标记敌人多受25%伤害、击杀+2金。',
+ ult:{name:'头条风暴',fx:'flash',pow:7,status:{stun:2.5}},
+ pic:'干练短发少女记者，举着复古相机，蓝色学院风校服配记者证'},
+
+{id:28,name:'藏海',cls:'图书管理员',emo:'📚',color:'#a8a8d0',cost:120,hp:380,atk:14,def:14,range:3.0,rate:.85,crit:.1,dodge:.1,type:'ranged',unlock:20,mech:'librarian',
+ desc:'静默领域：范围内远程敌人无法攻击，全体减速15%。',
+ ult:{name:'无字天书',fx:'seal',pow:5,status:{silence:4,stun:2}},
+ pic:'戴眼镜的文静少女，怀抱一摞古籍，深紫色图书管理员校服'},
+
+{id:29,name:'袁天罡',cls:'风水师',emo:'🔮',color:'#d0a8e8',cost:150,hp:340,atk:18,def:10,range:3.0,rate:.9,crit:.15,dodge:.1,type:'ranged',unlock:29,mech:'fengshui',
+ desc:'风水大阵：范围内友方伤害与暴击率+20%。',
+ ult:{name:'乾坤法阵',fx:'bagua',pow:6,special:'dmgbuff'},
+ pic:'神秘气质少年，手持罗盘，星象纹样的道系国风校服，法眼微光'},
+
+{id:30,name:'狄仁杰',cls:'侦探',emo:'🔍',color:'#e8b08a',cost:150,hp:400,atk:26,def:12,range:3.4,rate:1.0,crit:.2,dodge:.1,type:'ranged',unlock:35,mech:'detective',
+ desc:'洞察破绽：标记真伤，敌人生命低于12%时直接结案处决。',
+ ult:{name:'真相大白',fx:'judge',pow:10,special:'execute30'},
+ pic:'福尔摩斯式唐风衣少年侦探，放大镜与卷宗，焦糖色侦探校服'},
+];
+const CHAR_BY_ID = Object.fromEntries(CHARACTERS.map(c=>[c.id,c]));
+
+/* ---------------- 皮肤（祈愿池，纯外观） ---------------- */
+const SKINS = [
+{id:'s1',char:1,name:'赤焰侠客',rarity:'SR',out:'暗红黑金国风汉服劲装，火焰暗纹，红披风'},
+{id:'s2',char:2,name:'锦衣缇骑',rarity:'SSR',out:'玄黑金纹锦衣卫风校服，披风火枪，华贵冷冽'},
+{id:'s3',char:3,name:'广寒仙子',rarity:'UR',out:'月白广袖流仙裙，银冰晶冠，月光仙气'},
+{id:'s4',char:4,name:'天工小匠',rarity:'R',out:'黄铜齿轮工装风校服，护目镜推在额头'},
+{id:'s5',char:5,name:'玄甲军神',rarity:'SSR',out:'黑金铠甲式国风校服，赤红披风，山岳纹巨盾'},
+{id:'s6',char:6,name:'雷公法相',rarity:'SSR',out:'紫金雷公法袍，背后雷环，电光战纹'},
+{id:'s7',char:7,name:'朱雀炎舞',rarity:'SR',out:'朱红朱雀织金汉服长裙，火羽发饰，端庄长袖'},
+{id:'s8',char:8,name:'竹林游侠',rarity:'R',out:'翠绿竹纹短打校服，斗笠与回旋镖'},
+{id:'s9',char:9,name:'青冥剑仙',rarity:'UR',out:'青色仙袍大袖，凌云长剑，仙气缥缈'},
+{id:'s10',char:10,name:'钱塘水君',rarity:'SR',out:'深蓝浪纹铠甲校服，三叉戟寒光，浪头披风'},
+{id:'s11',char:11,name:'杏林仙子',rarity:'UR',out:'淡绿百花仙裙，药葫芦与柳枝，治愈柔光'},
+{id:'s12',char:12,name:'影杀夜衣',rarity:'SSR',out:'纯黑鎏金夜行衣，狐面吊坠，暗紫披风'},
+{id:'s13',char:13,name:'醉里剑歌',rarity:'SR',out:'月白绣剑长衫，酒葫芦挂件，落英满身'},
+{id:'s14',char:14,name:'纸偶巫女',rarity:'R',out:'红白巫女风国风校服，纸偶环绕，符纸发饰'},
+{id:'s15',char:15,name:'五毒苗裳',rarity:'SR',out:'苗银叮当的翠绿毒师长裙，蛊虫纹样'},
+{id:'s16',char:16,name:'秦淮画舫',rarity:'SSR',out:'烟粉织金琵琶仕女服，轻纱披帛，水墨舫影'},
+{id:'s17',char:17,name:'翰林书童',rarity:'R',out:'青色襕衫书童服，簪笔与书卷，清雅'},
+{id:'s18',char:18,name:'泼墨山人',rarity:'R',out:'墨色山水纹宽袖汉服，画笔为簪'},
+{id:'s19',char:19,name:'国手棋师',rarity:'SSR',out:'黑白阴阳纹棋师长袍，白玉棋子冠'},
+{id:'s20',char:20,name:'天师道袍',rarity:'SR',out:'明黄桃木符文天师道袍，拂尘与法剑'},
+{id:'s21',char:21,name:'金身罗汉',rarity:'SR',out:'赤金纹袈裟武僧服，青铜佛珠，怒目金身'},
+{id:'s22',char:22,name:'十二花神',rarity:'R',out:'百花织锦花神襦裙，花环与荆棘藤蔓'},
+{id:'s23',char:23,name:'灶神小厨',rarity:'N',out:'喜庆红白色厨神围裙装，热面蒸汽'},
+{id:'s24',char:24,name:'偃师机巧',rarity:'SR',out:'青铜墨纹偃师机关服，悬浮小型机关鸢'},
+{id:'s25',char:25,name:'逐日少年',rarity:'N',out:'金红田径国风运动服，鎏金发带'},
+{id:'s26',char:26,name:'霓裳羽衣',rarity:'SSR',out:'端庄华丽的七彩霓裳羽衣广袖长裙，孔雀翎扇，惊艳而不暴露'},
+{id:'s27',char:27,name:'金牌记者',rarity:'R',out:'卡其色侦探风衣式校服，金笔记者证'},
+{id:'s28',char:28,name:'司书先生',rarity:'R',out:'靛蓝复古图书馆司书服，银链眼镜'},
+{id:'s29',char:29,name:'钦天监正',rarity:'SSR',out:'星官紫袍钦天监礼服，浑天仪法杖，星空披风'},
+{id:'s30',char:30,name:'神探宰辅',rarity:'UR',out:'焦糖色唐风衣宰辅礼服，金龙暗纹，虎目神探'},
+];
+const SKIN_BY_ID = Object.fromEntries(SKINS.map(s=>[s.id,s]));
+const RATE_TABLE=[['N',.60],['R',.28],['SR',.09],['SSR',.025],['UR',.005]];
+
+/* ---------------- 敌人（老师） ----------------
+   hp/atk 为 D/C/B/A/S 五维基准，随关卡成长 */
+const GRADE={D:{hp:70,atk:7},C:{hp:125,atk:11},B:{hp:210,atk:16},A:{hp:380,atk:26},S:{hp:780,atk:42}};
+const ENEMIES = {
+ math:{key:'math',name:'数学老师',emo:'😀',hp:'D',atk:'B',def:4,speed:1.25,range:0.9,gold:8,flags:[],
+   desc:'血量D 攻击B，无特殊能力，稳步推进。'},
+ chinese:{key:'chinese',name:'语文老师',emo:'😌',hp:'A',atk:'D',def:8,speed:.85,range:0.9,gold:14,flags:['explode'],
+   desc:'血量A 攻击D，被击败时板书爆炸，殃及附近同窗！'},
+ english:{key:'english',name:'英语老师',emo:'😎',hp:'C',atk:'S',def:5,speed:1.15,range:3.2,gold:12,flags:['ranged'],
+   desc:'血量C 攻击S，远程朗读咒语攻击同窗。'},
+ chem:{key:'chem',name:'化学老师',emo:'🤓',hp:'A',atk:'A',def:9,speed:.8,range:3.0,gold:18,flags:['ranged','explode'],
+   desc:'血量A 攻击A，远程投试剂，死亡还会引发爆炸。'},
+ can:{key:'can',name:'残',emo:'🤕',hp:'D',atk:'C',def:2,speed:1.65,range:0.9,gold:6,flags:['drop'],
+   desc:'血量D 的神秘残党，击败后掉落250金币！'},
+ principal:{key:'principal',name:'校长',emo:'😈',hp:'S',atk:'S',def:14,speed:.68,range:3.4,gold:90,flags:['ranged','knock','boss'],
+   desc:'血量S 攻击S 的终极大Boss：远程惩戒、击退震晕同窗，突破防线损失5点生命！'},
+};
+
+/* ---------------- 五大剧情区 / 60 关 ---------------- */
+const ZONES = [
+{name:'🏢 宿舍楼',from:1,to:16,ground:'#5a4636',path:'#8a6d52',pathEdge:'#6e553d',
+ way:[[-.6,1.5],[12.5,1.5],[12.5,4.5],[2.5,4.5],[2.5,7.5],[16.6,7.5]]},
+{name:'🏥 校医院',from:17,to:28,ground:'#3e4a5e',path:'#e8f1f5',pathEdge:'#b9d2dc',
+ way:[[- .6,8],[3,8],[3,2],[7,2],[7,8],[11,8],[11,2],[16.6,2]]},
+{name:'🛣 跨校区',from:29,to:34,ground:'#41464e',path:'#6b7280',pathEdge:'#565d68',
+ way:[[-.6,1],[14,1],[14,5],[1,5],[1,8.5],[16.6,8.5]]},
+{name:'🏫 学校区',from:35,to:52,ground:'#4a3f55',path:'#9aa0ad',pathEdge:'#7c8290',
+ way:[[-.6,5],[3,5],[3,1.5],[8,1.5],[8,8],[12.5,8],[12.5,3.5],[16.6,3.5]]},
+{name:'💻 办公区',from:53,to:60,ground:'#332c42',path:'#7a6fa0',pathEdge:'#5d5380',
+ way:[[2,-.6],[2,2.5],[8,2.5],[8,6],[13.5,6],[13.5,2],[15.3,2],[15.3,9.6]]},
+];
+function zoneOf(lv){return ZONES.find(z=>lv>=z.from&&lv<=z.to);}
+function isBossLevel(lv){return [16,28,34,52,60].includes(lv);}
+function levelName(lv){return zoneOf(lv).name.replace(/^.. /,'')+' 第'+lv+'关'+(isBossLevel(lv)?' · Boss战':'');}
+// 关卡可出现的敌人池
+function enemyPool(lv){
+  if(lv<=3)  return ['math'];
+  if(lv<=6)  return ['math','can'];
+  if(lv<=16) return ['math','can','chinese'];
+  if(lv<=28) return ['math','chinese','english','can'];
+  if(lv<=34) return ['math','chinese','english','chem','can'];
+  return ['math','chinese','english','chem','can'];
+}
+
+/* ============================================================
+   存档 · 路由 · 通用 UI
+============================================================ */
+const SAVE_KEY='xyxj_save_v1';
+let save={unlocked:1, stars:{}, starWords:0, skins:[], equipped:{}};
+try{const s=JSON.parse(localStorage.getItem(SAVE_KEY)); if(s) save=Object.assign(save,s);}catch(e){}
+function persist(){try{localStorage.setItem(SAVE_KEY,JSON.stringify(save));}catch(e){}}
+
+const $=id=>document.getElementById(id);
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  $('screen-'+id).classList.add('active');
+  if(id==='menu') refreshMenu();
+}
+function refreshMenu(){
+  $('menuStars').textContent=save.starWords;
+  $('menuProgress').textContent=save.unlocked;
+}
+function toast(msg,ms=1600){
+  const t=$('toast'); t.textContent=msg; t.classList.add('show');
+  clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove('show'),ms);
+}
+function waveHint(msg){
+  const h=$('waveHint'); h.textContent=msg; h.classList.add('show');
+  setTimeout(()=>h.classList.remove('show'),1400);
+}
+
+/* 立绘图片：加载失败时降级为 emoji 占位 */
+(function injectImgCSS(){
+  const st=document.createElement('style');
+  st.textContent=`.picimg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+  .picfb{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  font-size:42px;background:linear-gradient(160deg,#4a3570,#2a1d44)}`;
+  document.head.appendChild(st);
+})();
+const imgCache={};
+// 文生图接口首次可能返回“生成中”占位小图，自动重试直到拿到正式立绘
+function hookImgRetry(im,url){
+  im.dataset.rt='0';
+  im.addEventListener('load',()=>{
+    const n=+im.dataset.rt||0;
+    if(im.naturalWidth&&im.naturalWidth<600&&n<4){
+      im.dataset.rt=String(n+1);
+      setTimeout(()=>{im.src=url+(url.includes('?')?'&':'?')+'_r='+Date.now();},4500);
+    }
+  });
+}
+function getImg(url){
+  if(!imgCache[url]){const im=new Image();hookImgRetry(im,url);im.src=url;imgCache[url]=im;}
+  return imgCache[url];
+}
+function retryPic(im){
+  const n=+im.dataset.rt||0;
+  if(im.naturalWidth&&im.naturalWidth<600&&n<4){
+    im.dataset.rt=n+1;
+    const base=im.src.split('&_r=')[0];
+    setTimeout(()=>{im.src=base+'&_r='+Date.now();},4500);
+  }
+}
+function imgHTML(prompt,emo){
+  const url=portraitURL(prompt); getImg(url);
+  return `<span class="picfb">${emo||'🌸'}</span><img class="picimg" data-rt="0" src="${url}"
+    onload="retryPic(this)" onerror="this.style.display='none'" alt="">`;
+}
+function charPortraitPrompt(c){
+  const sk=save.equipped[c.id];
+  return sk ? (SKIN_BY_ID[sk].out+'，'+c.pic) : c.pic;
+}
+
+/* ---------------- 关卡地图 ---------------- */
+function openMap(){
+  showScreen('map'); $('mapStars').textContent=save.starWords;
+  const body=$('mapBody'); body.innerHTML='';
+  ZONES.forEach(z=>{
+    const div=document.createElement('div'); div.className='zone';
+    let btns='';
+    for(let lv=z.from;lv<=z.to;lv++){
+      let cls='lock',label=lv,extra='';
+      if(save.stars[lv]){cls='done';extra='<span class="stars">'+'★'.repeat(save.stars[lv])+'</span>';}
+      if(lv===save.unlocked) cls='cur';
+      if(lv<=save.unlocked)
+        btns+=`<button class="lvl-btn ${cls}" onclick="startSolo(${lv})">${isBossLevel(lv)?'<span class="boss">😈</span>':''}${label}${extra}</button>`;
+      else
+        btns+=`<button class="lvl-btn lock" disabled>🔒</button>`;
+    }
+    div.innerHTML=`<h3>${z.name}　<small style="font-size:13px;opacity:.7">第 ${z.from}–${z.to} 关</small></h3>
+      <div class="lvl-grid">${btns}</div>`;
+    body.appendChild(div);
+  });
+}
+
+/* ---------------- 图鉴 ---------------- */
+function openCodex(){
+  showScreen('codex');
+  const g=$('codexGrid'); g.innerHTML='';
+  CHARACTERS.forEach(c=>{
+    const unlocked=save.unlocked>=c.unlock;
+    const d=document.createElement('div');
+    d.className='char-card rarity-'+(skinRarityOf(c)||'N')+(unlocked?'':' locked');
+    d.innerHTML=`<div class="pic">${unlocked?imgHTML(charPortraitPrompt(c),c.emo):'<span class="picfb">🔒</span>'}</div>
+      <div class="nm">${unlocked?c.name:'？？？'}</div><div class="cls">${unlocked?c.cls:'第'+c.unlock+'关解锁'}</div>`;
+    if(unlocked) d.onclick=()=>showCharDetail(c.id);
+    g.appendChild(d);
+  });
+}
+function skinRarityOf(c){
+  const sk=save.equipped[c.id];
+  return sk?SKIN_BY_ID[sk].rarity:null;
+}
+function statBar(label,val,max){
+  return `<div class="statbar"><span style="width:44px">${label}</span>
+    <div class="bar"><div class="fill" style="width:${Math.min(100,val/max*100)}%"></div></div></div>`;
+}
+function showCharDetail(id){
+  const c=CHAR_BY_ID[id];
+  const mySkins=SKINS.filter(s=>s.char===id);
+  let skinsHtml='';
+  mySkins.forEach(s=>{
+    const owned=save.skins.includes(s.id);
+    const sel=save.equipped[id]===s.id;
+    skinsHtml+=`<div class="skin-chip rarity-${s.rarity} ${sel?'sel':''}" onclick="${owned?`equipSkin('${s.id}')`:`toast('未拥有该换装')`}">
+      <div class="pic">${owned?imgHTML(s.out+'，'+c.pic,c.emo):'<span class="picfb" style="font-size:26px">🔒<br></span>'}</div>
+      <div class="sn">${owned?s.name:'？？？'}<br><b style="color:var(--rc)">${s.rarity}</b></div></div>`;
+  });
+  // 默认立绘选项
+  const defaultSel=!save.equipped[id]?'sel':'';
+  skinsHtml=`<div class="skin-chip ${defaultSel}" onclick="equipSkin(null,${id})">
+    <div class="pic">${imgHTML(c.pic,c.emo)}</div><div class="sn">默认校服</div></div>`+skinsHtml;
+
+  $('modalBody').innerHTML=`
+    <h2>${c.emo} ${c.name} · ${c.cls}</h2>
+    <div class="char-detail">
+      <div class="big-pic rarity-${skinRarityOf(c)||'N'}" style="border:2px solid var(--rc,#665588)">
+        ${imgHTML(charPortraitPrompt(c),c.emo)}
+        <span class="r-badge" style="background:${c.color}">${c.cost}💰</span>
+      </div>
+      <div class="meta">
+        <b style="color:${c.color}">被动机制</b><br>${c.desc}<br>
+        <b style="color:var(--gold)">✨ 大招 · ${c.ult.name}</b><br>全屏爆发（${c.ult.pow}倍攻击力）<br>
+        ${statBar('生命',c.hp,950)}${statBar('攻击',c.atk,34)}${statBar('防御',c.def,38)}
+        ${statBar('射程',c.range,4.4)}${statBar('攻速',c.rate,1.5)}
+        ${statBar('暴击',c.crit,.55)}${statBar('闪避',c.dodge,.25)}
+        <span class="tag">${c.type==='ranged'?'远程':'近战'}</span>
+        <span class="tag">第 ${c.unlock} 关解锁</span>
+      </div>
+    </div>
+    <h3 style="color:var(--gold);margin:14px 0 6px;font-size:16px">换装立绘</h3>
+    <div class="skin-row">${skinsHtml}</div>
+    <div style="text-align:center;margin-top:14px"><button class="btn ghost" onclick="closeModal()">关闭</button></div>`;
+  $('modalMask').classList.add('show');
+}
+function closeModal(){$('modalMask').classList.remove('show');}
+$('modalMask').addEventListener('click',e=>{if(e.target===$('modalMask'))closeModal();});
+function equipSkin(sid,cid){
+  if(sid===null){delete save.equipped[cid];}
+  else{
+    if(!save.skins.includes(sid)){toast('尚未拥有该换装');return;}
+    const c=SKIN_BY_ID[sid].char; save.equipped[c]=sid;
+  }
+  persist(); openCodex();
+  if(sid) showCharDetail(SKIN_BY_ID[sid].char);
+}
+
+/* ---------------- 星语祈愿 ---------------- */
+function openGacha(){
+  showScreen('gacha');
+  $('gachaStars').textContent=save.starWords;
+  const pool=$('skinPool'); pool.innerHTML='';
+  SKINS.forEach(s=>{
+    const c=CHAR_BY_ID[s.char], owned=save.skins.includes(s.id);
+    const d=document.createElement('div');
+    d.className='skin-card rarity-'+s.rarity;
+    d.innerHTML=`<div class="pic"><span class="r-badge">${s.rarity}</span>
+      ${imgHTML(s.out+'，'+c.pic,c.emo)}</div>
+      <div class="info"><div class="rname">${c.name} · ${s.name}</div>
+      <div class="own">${owned?'✅ 已拥有':'未获得'}</div></div>`;
+    pool.appendChild(d);
+  });
+  $('drawResult').innerHTML='';
+}
+function pickRarity(){
+  let r=Math.random();
+  for(const [name,p] of RATE_TABLE){r-=p; if(r<=0)return name;}
+  return 'N';
+}
+function drawGacha(times){
+  const cost=times===1?100:900;
+  if(save.starWords<cost){toast('星语不足，通关关卡可获得星语');return;}
+  save.starWords-=cost;
+  const got=[];
+  for(let i=0;i<times;i++){
+    const rar=pickRarity();
+    const pool=SKINS.filter(s=>s.rarity===rar);
+    const s=pool[Math.floor(Math.random()*pool.length)];
+    if(save.skins.includes(s.id)){save.starWords+=50; got.push({s,dup:true});}
+    else{save.skins.push(s.id); got.push({s,dup:false});}
+  }
+  persist(); openGacha();
+  const box=$('drawResult'); box.innerHTML='';
+  got.forEach(({s,dup})=>{
+    const c=CHAR_BY_ID[s.char];
+    const d=document.createElement('div');
+    d.className='skin-card rarity-'+s.rarity+(dup?'':' new');
+    d.innerHTML=`<div class="pic"><span class="r-badge">${s.rarity}</span>
+      ${imgHTML(s.out+'，'+c.pic,c.emo)}</div>
+      <div class="info"><div class="rname">${c.name} · ${s.name}</div>
+      <div class="own">${dup?'重复 → 转化 50 星语':'✨ 新换装获得！'}</div></div>`;
+    box.appendChild(d);
+  });
+  box.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+/* ============================================================
+   局外：单人 / 联机入口占位（联机模块在后续追加）
+============================================================ */
+function startSolo(lv){
+  startBattle(lv,{net:null});
+}
+
+/* ============================================================
+   战斗引擎 · 核心状态与关卡波次
+============================================================ */
+const COLS=16, ROWS=9;
+let B=null;                 // 当前战局
+let rafId=0, lastT=0;
+const cv=$('battleCanvas'), ctx=cv.getContext('2d');
+
+function startBattle(lv,opt){
+  const zone=zoneOf(lv);
+  B={
+    lv, zone, opt:opt||{net:null},
+    net: (opt&&opt.net)||null,          // 'host' | 'guest' | null
+    conn: opt&&opt.conn||null,
+    mySide: (opt&&(opt.side)||'host'),  // guest / host
+    lives:20, state:'fight', speed:1,
+    gold:{host:300,guest:300},
+    enemies:[], towers:[], shots:[], parts:[], floats:[], sfx:[],
+    waves:buildWaves(lv), waveIndex:0,
+    spawn:[], spawnT:0, between:0,
+    selectShop:0, selectTower:null, hoverX:-1, hoverY:-1,
+    uidN:1, shake:0, time:0,
+    ended:false,
+  };
+  B.totalLen=pathTotal(zone.way);
+  buildShop();
+  $('hudLevelName').textContent=levelName(lv);
+  $('netTag').textContent = B.net==='host'?'🛜 房主': B.net==='guest'?'🛜 队友':'';
+  $('speedBtn').textContent='⏩ 1x';
+  $('towerPanel').classList.remove('show');
+  closeModal();
+  showScreen('battle');
+  resizeCanvas();
+  waveHint('第 1 波来袭！');
+  callNextWave(true);
+  cancelAnimationFrame(rafId);
+  lastT=performance.now();
+  rafId=requestAnimationFrame(loop);
+}
+function exitBattle(){
+  if(B&&B.net==='guest'&&B.conn) sendNet({t:'act',act:{a:'leave'}});
+  if(B&&B.net==='host'&&B.conn){try{sendNet({t:'close'});}catch(e){}}
+  B=null; cancelAnimationFrame(rafId);
+  showScreen('map');
+  openMap();
+}
+
+function buildWaves(lv){
+  const n=Math.min(8,3+Math.floor((lv-1)/6));
+  const pool=enemyPool(lv);
+  const waves=[];
+  for(let w=0;w<n;w++){
+    const arr=[];
+    let count=Math.min(26,6+w*2+Math.floor(lv/5));
+    for(let i=0;i<count;i++){
+      let key=pool[Math.floor(Math.random()*pool.length)];
+      if(Math.random()<0.12) key='can';
+      arr.push(key);
+    }
+    if(isBossLevel(lv)&&w===n-1){arr.length=Math.min(arr.length,10);arr.push('principal');}
+    waves.push(arr);
+  }
+  return waves;
+}
+function callNextWave(first){
+  if(!B||B.ended) return;
+  if(B.spawn.length) { if(!first) toast('当前波次尚未登场完毕'); return; }
+  if(B.waveIndex>=B.waves.length) return;
+  if(B.net==='guest'){sendNet({t:'act',act:{a:'wave'}});return;}
+  const keys=B.waves[B.waveIndex++];
+  B.spawn=keys.map(k=>({key:k,delay:0}));
+  B.spawnT=0;
+  if(!first){addGold('host',10);if(B.net==='host')addGold('guest',10);}
+  waveHint('第 '+B.waveIndex+' / '+B.waves.length+' 波');
+}
+
+/* 金币 */
+function addGold(side,n){ if(!B)return; B.gold[side]=(B.gold[side]||0)+n; }
+
+/* ---------------- 路径几何 ---------------- */
+function pathTotal(way){
+  let L=0; for(let i=0;i<way.length-1;i++) L+=Math.hypot(way[i+1][0]-way[i][0],way[i+1][1]-way[i][1]);
+  return L;
+}
+function posAt(way,dist){
+  let d=Math.max(0,dist);
+  for(let i=0;i<way.length-1;i++){
+    const a=way[i],b=way[i+1],len=Math.hypot(b[0]-a[0],b[1]-a[1]);
+    if(d<=len){const t=d/len;return {x:a[0]+(b[0]-a[0])*t,y:a[1]+(b[1]-a[1])*t};}
+    d-=len;
+  }
+  const e=way[way.length-1];return {x:e[0],y:e[1]};
+}
+function distToSeg(px,py,ax,ay,bx,by){
+  const dx=bx-ax,dy=by-ay,l2=dx*dx+dy*dy;
+  let t=l2?((px-ax)*dx+(py-ay)*dy)/l2:0; t=Math.max(0,Math.min(1,t));
+  return Math.hypot(px-(ax+dx*t),py-(ay+dy*t));
+}
+function distToPath(x,y){
+  const w=B.zone.way;let m=99;
+  for(let i=0;i<w.length-1;i++) m=Math.min(m,distToSeg(x,y,w[i][0],w[i][1],w[i+1][0],w[i+1][1]));
+  return m;
+}
+function cellFree(x,y){
+  if(x<0.4||x>COLS-.4||y<0.4||y>ROWS-.4) return false;
+  if(distToPath(x,y)<0.82) return false;
+  return !B.towers.some(t=>Math.hypot(t.x-x,t.y-y)<0.8);
+}
+
+/* ---------------- 商店 / 输入 ---------------- */
+function buildShop(){
+  const bar=$('shopBar');bar.innerHTML='';
+  CHARACTERS.forEach(c=>{
+    const locked=B.lv<c.unlock;
+    const d=document.createElement('div');
+    d.className='shop-card'+(locked?' dis':'');
+    d.id='shop-'+c.id;
+    d.innerHTML=`<div class="emo">${locked?'🔒':c.emo}</div><div class="cost">${c.cost}💰</div><div class="lkey">${c.name}</div>`;
+    if(!locked) d.onclick=()=>{
+      B.selectShop = B.selectShop===c.id?0:c.id;
+      B.selectTower=null; $('towerPanel').classList.remove('show');
+    };
+    bar.appendChild(d);
+  });
+}
+function resizeCanvas(){
+  const w=cv.clientWidth,h=cv.clientHeight;
+  const dpr=Math.min(2,window.devicePixelRatio||1);
+  cv.width=w*dpr;cv.height=h*dpr;
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  B&&(B.view=computeView(w,h));
+}
+function computeView(w,h){
+  const tile=Math.min(w/COLS,h/ROWS);
+  return {tile,ox:(w-tile*COLS)/2,oy:(h-tile*ROWS)/2,w,h};
+}
+window.addEventListener('resize',()=>B&&resizeCanvas());
+function toWorld(ev){
+  const r=cv.getBoundingClientRect();
+  const v=B.view;
+  return {x:(ev.clientX-r.left-v.ox)/v.tile,y:(ev.clientY-r.top-v.oy)/v.tile};
+}
+cv.addEventListener('pointerdown',ev=>{
+  if(!B||B.ended)return;
+  const p=toWorld(ev);
+  if(B.net==='guest'){
+    if(B.selectShop){
+      const cx=Math.round(p.x),cy=Math.round(p.y);
+      tryPlace(B.selectShop,cx,cy,'guest');
+    }else guestPick(ev);
+    return;
+  }
+  if(B.selectShop){
+    const cx=Math.round(p.x),cy=Math.round(p.y);
+    tryPlace(B.selectShop,cx,cy,B.mySide);
+  }else{
+    pickTower(p);
+  }
+});
+cv.addEventListener('pointermove',ev=>{
+  if(!B)return; const p=toWorld(ev);B.hoverX=p.x;B.hoverY=p.y;
+});
+function guestPick(ev){
+  const p=toWorld(ev);
+  // 队友可点选任意塔查看；放卡通过底部卡片
+  let found=null;
+  B.towers.forEach(t=>{if(Math.hypot(t.x-p.x,t.y-p.y)<.55)found=t;});
+  B.selectTower=found;B.selectShop=0;
+  renderTowerPanel();
+}
+function pickTower(p){
+  let found=null;
+  B.towers.forEach(t=>{if(Math.hypot(t.x-p.x,t.y-p.y)<.55)found=t;});
+  B.selectTower=found;B.selectShop=0;
+  renderTowerPanel();
+}
+function tryPlace(cid,cx,cy,side){
+  const c=CHAR_BY_ID[cid];
+  if((B.gold[side]||0)<c.cost){toast('金币不足');return;}
+  if(!cellFree(cx,cy)){toast('此处无法部署');return;}
+  if(B.net==='guest'){sendNet({t:'act',act:{a:'place',cid,x:cx,y:cy}});B.selectShop=0;return;}
+  B.gold[side]-=c.cost;
+  const t={uid:'u'+(B.uidN++),cid,x:cx,y:cy,side,
+    hp:c.hp,maxhp:c.hp,cd:0,charge:0,combo:0,timer:0,stunT:0,
+    blockT:0,dmgBuffT:0,rateBuffT:0};
+  B.towers.push(t);
+  spawnParticles(cx,cy,c.color,16,1);
+  B.selectShop=0;
+}
+
+/* 塔面板 */
+function renderTowerPanel(){
+  const t=B.selectTower;const panel=$('towerPanel');
+  if(!t){panel.classList.remove('show');return;}
+  const c=CHAR_BY_ID[t.cid];
+  panel.classList.add('show');
+  $('tpName').textContent=`${c.emo} ${c.name} · ${c.cls}${B.net?('（'+(t.side==='host'?'房主':'队友')+'）'):''}`;
+  $('tpInfo').innerHTML=`生命 ${Math.ceil(t.hp)}/${t.maxhp}<br>${c.desc}`;
+  $('tpEnergy').style.width=Math.round(t.charge*100)+'%';
+  const mine=!B.net||t.side===B.mySide;
+  $('tpUlt').disabled=!(mine&&t.charge>=1&&!B.ended);
+  $('tpUlt').textContent=t.charge>=1?'✨ '+c.ult.name:'大招蓄能中';
+}
+function sellSelected(){
+  const t=B.selectTower;if(!t)return;
+  if(B.net&&t.side!==B.mySide){toast('这是队友的同窗');return;}
+  if(B.net==='guest'){sendNet({t:'act',act:{a:'sell',uid:t.uid}});$('towerPanel').classList.remove('show');return;}
+  const c=CHAR_BY_ID[t.cid];
+  addGold(t.side,Math.round(c.cost*.7));
+  B.towers=B.towers.filter(x=>x!==t);
+  spawnParticles(t.x,t.y,'#ffd66b',12,1);
+  $('towerPanel').classList.remove('show');B.selectTower=null;
+}
+function ultSelected(){
+  const t=B.selectTower;if(!t||t.charge<1)return;
+  if(B.net&&t.side!==B.mySide){toast('这是队友的同窗');return;}
+  if(B.net==='guest'){sendNet({t:'act',act:{a:'ult',uid:t.uid}});return;}
+  fireUlt(t);
+}
+function toggleSpeed(){
+  if(!B)return;
+  if(B.net==='guest')return;
+  B.speed=B.speed===1?2:1;
+  $('speedBtn').textContent='⏩ '+B.speed+'x';
+}
+
+/* ============================================================
+   每帧更新
+============================================================ */
+function loop(now){
+  rafId=requestAnimationFrame(loop);
+  if(!B)return;
+  let dt=Math.min(.05,(now-lastT)/1000);lastT=now;
+  if(B.net==='guest'){
+    updateFx(dt);
+    B.shake=Math.max(0,B.shake-dt*3);
+  }else{
+    const steps=B.speed===2?2:1;
+    for(let i=0;i<steps;i++) update(dt);
+    if(B.net==='host') hostSendSnapshot();
+  }
+  render();
+  updateHUD();
+}
+
+function update(dt){
+  if(B.ended||B.state!=='fight'){updateFx(dt);return;}
+  B.time+=dt;B.shake=Math.max(0,B.shake-dt*3);
+
+  // 出生
+  if(B.spawn.length){
+    B.spawnT-=dt;
+    if(B.spawnT<=0){
+      const s=B.spawn.shift();spawnEnemy(s.key);
+      B.spawnT=0.85;
+    }
+  }
+  updateAuras();
+  updateTowers(dt);
+  updateEnemies(dt);
+  updateShots(dt);
+  updateFx(dt);
+  checkEnd(dt);
+}
+
+function spawnEnemy(key){
+  const def=ENEMIES[key];
+  const gH=GRADE[def.hp],gA=GRADE[def.atk];
+  const hpMul=(1+(B.lv-1)*0.062+B.waveIndex*0.02)*(def.flags.includes('boss')?1.35:1);
+  const atkMul=0.9+(B.lv-1)*0.055;
+  const e={uid:B.uidN++,key,def,x:B.zone.way[0][0],y:B.zone.way[0][1],dist:0,
+    hp:Math.round(gH.hp*hpMul),maxhp:Math.round(gH.hp*hpMul),
+    atk:Math.round(gA.atk*atkMul),armor:def.def+(B.lv-1)*0.35,
+    speed:def.speed,range:def.range,cd:1+Math.random(),
+    slowT:0,freezeT:0,stunT:0,rootT:0,silenceT:0,
+    burnT:0,burnS:0,poisonT:0,poisonS:0,bleedT:0,
+    marks:0,reportT:0,pushFx:0,dead:false};
+  B.enemies.push(e);
+  return e;
+}
+
+/* 光环：每帧重算 */
+function updateAuras(){
+  B.enemies.forEach(e=>{e._silenced=false;e._aSlow=1;e._vuln=1;});
+  B.towers.forEach(t=>{t._rateMul=1;t._dodge=0;t._dmgMul=1;t._critAdd=0;});
+  B.towers.forEach(src=>{
+    const c=CHAR_BY_ID[src.cid];
+    if(src.stunT>0)return;
+    if(c.mech==='bard'){
+      B.enemies.forEach(e=>{if(Math.hypot(e.x-src.x,e.y-src.y)<c.range){e._aSlow*=.8;e._vuln*=1.1;}});
+    }else if(c.mech==='librarian'){
+      B.enemies.forEach(e=>{if(Math.hypot(e.x-src.x,e.y-src.y)<c.range){
+        e._aSlow*=.85; if(e.def.flags.includes('ranged'))e._silenced=true;}});
+    }else if(c.mech==='chef'){
+      B.towers.forEach(t=>{if(t!==src&&Math.hypot(t.x-src.x,t.y-src.y)<c.range)t._rateMul*=1.2;});
+    }else if(c.mech==='dancer'){
+      B.towers.forEach(t=>{if(Math.hypot(t.x-src.x,t.y-src.y)<c.range)t._dodge+=.1;});
+    }else if(c.mech==='fengshui'){
+      B.towers.forEach(t=>{if(Math.hypot(t.x-src.x,t.y-src.y)<c.range){t._dmgMul*=1.2;t._critAdd+=.2;}});
+    }
+  });
+}
+
+/* 状态计时（敌人） */
+function tickEnemyStatus(e,dt){
+  ['slowT','freezeT','stunT','rootT','silenceT','reportT'].forEach(k=>e[k]=Math.max(0,e[k]-dt));
+  // 持续伤害
+  if(e.burnT>0){e.burnT-=dt;hurtDot(e,e.burnS*8*dt,'#ff8a5b');if(e.burnT<=0)e.burnS=0;}
+  if(e.poisonT>0){e.poisonT-=dt;hurtDot(e,e.poisonS*12*dt,'#9be07a');if(e.poisonT<=0)e.poisonS=0;}
+  if(e.bleedT>0){e.bleedT-=dt;hurtDot(e,6*dt,'#ff6b8a');}
+}
+function hurtDot(e,n,color){
+  e.hp-=n;
+  if(Math.random()<.15)B.floats.push({x:e.x,y:e.y-.4,text:Math.round(n)+'',color,t:0,dur:.6});
+  if(e.hp<=0&&!e.dead)killEnemy(e,null);
+}
+
+/* ---------------- 敌人 ---------------- */
+function updateEnemies(dt){
+  for(const e of B.enemies){
+    if(e.dead)continue;
+    tickEnemyStatus(e,dt);
+    if(e.dead)continue;
+    const blocked=(e.freezeT>0||e.stunT>0||e.rootT>0);
+    // 攻击同窗
+    e.cd-=dt;
+    const target=nearestTower(e,e.range);
+    const canAtk = !(e.freezeT>0||e.stunT>0) && !(e._silenced) ;
+    if(target&&e.cd<=0&&canAtk){
+      e.cd=1.15;
+      enemyStrike(e,target);
+    }
+    if(!blocked){
+      const sp=e.speed*(e.slowT>0?.6:1)*e._aSlow;
+      e.dist+=sp*dt;
+      const p=posAt(B.zone.way,e.dist);
+      e.x=p.x;e.y=p.y;
+      if(e.dist>=B.totalLen){enemyLeak(e);}
+    }
+  }
+  B.enemies=B.enemies.filter(e=>!e.dead);
+}
+function nearestTower(e,range){
+  let best=null,bd=range;
+  for(const t of B.towers){
+    const d=Math.hypot(t.x-e.x,t.y-e.y);
+    if(d<=bd+0.05){bd=d;best=t;}
+  }
+  return best;
+}
+function enemyStrike(e,t){
+  const c=CHAR_BY_ID[t.cid];
+  if(e.def.flags.includes('ranged')){
+    B.shots.push({fx:'bad',x:e.x,y:e.y,tx:t.x,ty:t.y,speed:7,dmg:e.atk,color:'#ff5a6e',target:t,e:e});
+  }else{
+    damageTower(t,e.atk,e);
+  }
+  // 校长击退：震晕同窗
+  if(e.def.flags.includes('knock')){
+    t.stunT=Math.max(t.stunT,1);
+    B.shake=Math.max(B.shake,.6);
+    spawnParticles(t.x,t.y,'#b69bff',10,1.4);
+  }
+}
+function enemyLeak(e){
+  e.dead=true;
+  const loss=e.def.flags.includes('boss')?5:1;
+  B.lives=Math.max(0,B.lives-loss);
+  B.shake=.8;
+  addFloat(B.zone.way[B.zone.way.length-1][0]-1,ROWS/2,'-'+loss+' ❤️','#ff6b8a');
+}
+
+/* 敌人受伤与死亡 */
+function damageEnemy(e,raw,src,opt){
+  opt=opt||{};
+  if(e.dead)return;
+  let crit=false;
+  if(src){
+    crit=Math.random()<Math.min(.95,CHAR_BY_ID[src.cid].crit+(src._critAdd||0));
+  }
+  let dmg=opt.pure?raw:raw*(100/(100+(e.armor||0)));
+  if(crit)dmg*=2;
+  dmg*=e._vuln||1;
+  if(e.reportT>0)dmg*=1.25;
+  e.hp-=dmg;
+  B.floats.push({x:e.x+(Math.random()-.3)*.3,y:e.y-.4,
+    text:Math.round(dmg)+(crit?'!':''),color:crit?'#ffd66b':'#ffffff',t:0,dur:.7});
+  if(opt.onHit)opt.onHit(e,crit);
+  if(e.hp<=0)killEnemy(e,src);
+}
+function killEnemy(e,src){
+  if(e.dead)return;e.dead=true;
+  // 金币
+  let g=e.def.gold+Math.floor(B.lv/3);
+  if(src){
+    const mc=CHAR_BY_ID[src.cid];
+    if(mc.mech==='scholar')g+=3;
+    if(mc.mech==='reporter'&&e.reportT>0)g+=2;
+    addGold(src.side,g);
+    spawnParticles(e.x,e.y,'#ffd66b',6,1.2);
+  }else{
+    addGold('host',g);
+  }
+  if(e.def.flags.includes('drop')){
+    addGold(src?src.side:'host',250);
+    addFloat(e.x,e.y-1,'+250💰','#ffd66b');
+    spawnParticles(e.x,e.y,'#ffd66b',24,2);
+  }
+  // 死亡爆炸：伤及同窗
+  if(e.def.flags.includes('explode')){
+    B.shake=Math.max(B.shake,.5);
+    spawnParticles(e.x,e.y,'#ff9a3c',22,2);
+    B.sfx.push({type:'boom',x:e.x,y:e.y,t:0,dur:.4,r:1.5,color:'#ff9a3c'});
+    B.towers.forEach(t=>{if(Math.hypot(t.x-e.x,t.y-e.y)<1.6)damageTower(t,18+B.lv*0.6,null);});
+  }
+  // 毒杀传染
+  if(e.poisonS>0){
+    B.enemies.forEach(o=>{if(o!==e&&!o.dead&&Math.hypot(o.x-e.x,o.y-e.y)<1.4){
+      o.poisonT=4;o.poisonS=Math.max(o.poisonS,Math.min(5,e.poisonS));}});
+  }
+}
+
+/* 同窗受伤 */
+function damageTower(t,raw,fromE){
+  if(t.hp<=0)return;
+  const c=CHAR_BY_ID[t.cid];
+  if(t.blockT>0) raw*=.4;                       // 大招护盾
+  if(c.mech==='shieldblock'&&Math.random()<.3) raw*=.4;
+  if(Math.random()<c.dodge+(t._dodge||0)){addFloat(t.x,t.y-.5,'闪避','#9ff0ff');return;}
+  const dmg=raw*(100/(100+c.def));
+  t.hp-=dmg;
+  if(fromE&&c.mech==='monk'&&Math.random()<.3){
+    damageEnemy(fromE,c.atk*1.2,t,{});
+    spawnParticles(t.x,t.y,'#ffe08a',8,1.2);
+  }
+  if(t.hp<=0){
+    spawnParticles(t.x,t.y,c.color,18,1.6);
+    B.towers=B.towers.filter(x=>x!==t);
+    if(B.selectTower===t){B.selectTower=null;$('towerPanel').classList.remove('show');}
+  }
+}
+function addFloat(x,y,text,color){B.floats.push({x,y,text,color,t:0,dur:1});}
+
+/* ============================================================
+   同窗攻击 · 30 种机制
+============================================================ */
+function frontEnemy(t,range){
+  let best=null;
+  for(const e of B.enemies){if(e.dead)continue;
+    if(Math.hypot(e.x-t.x,e.y-t.y)<=range && (!best||e.dist>best.dist))best=e;}
+  return best;
+}
+function updateTowers(dt){
+  for(const t of B.towers){
+    t.stunT=Math.max(0,t.stunT-dt);
+    t.blockT=Math.max(0,t.blockT-dt);
+    t.dmgBuffT=Math.max(0,t.dmgBuffT-dt);
+    t.rateBuffT=Math.max(0,t.rateBuffT-dt);
+    if(t.stunT>0)continue;
+    const c=CHAR_BY_ID[t.cid];
+    t.cd-=dt;
+    // 发明家：每秒20金
+    if(c.mech==='inventor'){
+      t.goldT=(t.goldT||0)+dt;
+      if(t.goldT>=1){t.goldT-=1;addGold(t.side,20);
+        if(t.side===B.mySide||!B.net)addFloat(t.x,t.y-.5,'+20💰','#ffd66b');}
+      t.charge=Math.min(1,t.charge+.02*dt);
+    }
+    // 医仙：每秒治疗
+    if(c.mech==='healer'){
+      t.healT=(t.healT||0)+dt;
+      if(t.healT>=1){t.healT=0;
+        B.towers.forEach(o=>{if(o!==t&&Math.hypot(o.x-t.x,o.y-t.y)<c.range&&o.hp<o.maxhp){
+          o.hp=Math.min(o.maxhp,o.hp+o.maxhp*.015);
+          spawnParticles(o.x,o.y,'#8ff0b8',3,.6);}});}
+    }
+    // 召唤师：7秒缠敌
+    if(c.mech==='summoner'){
+      t.specT=(t.specT||0)+dt;
+      if(t.specT>=7){t.specT=0;const v=frontEnemy(t,c.range);
+        if(v){v.rootT=Math.max(v.rootT,1.5);v.stunT=Math.max(v.stunT,.6);
+          B.sfx.push({type:'talisman',x:v.x,y:v.y,t:0,dur:.6});
+          spawnParticles(v.x,v.y,'#e6c8f0',10,1);}}
+    }
+    // 画师：5秒墨池
+    if(c.mech==='painter'){
+      t.specT=(t.specT||0)+dt;
+      if(t.specT>=5){t.specT=0;const v=frontEnemy(t,c.range);
+        if(v){inkBlast(t,v);}}
+    }
+    // 普通攻击
+    const rate=c.rate*(t._rateMul||1)*(t.rateBuffT>0?1.4:1);
+    if(t.cd<=0){
+      const target=frontEnemy(t,c.range);
+      if(target){t.cd=1/rate;performAttack(t,c,target);t.charge=Math.min(1,t.charge+.05);}
+    }
+  }
+}
+function towerDmg(t,mul){
+  const c=CHAR_BY_ID[t.cid];
+  return c.atk*(mul||1)*(t._dmgMul||1)*(t.dmgBuffT>0?1.3:1);
+}
+function onHitFor(t){
+  const c=CHAR_BY_ID[t.cid];
+  return function(e,crit){
+    switch(c.mech){
+      case 'frost': e.slowT=1.5;if(Math.random()<.12)e.freezeT=1;
+        spawnParticles(e.x,e.y,'#9fe6ff',4,.7);break;
+      case 'flame': e.burnT=3;e.burnS=Math.min(3,e.burnS+1);break;
+      case 'poisoner': e.poisonT=4;e.poisonS=Math.min(5,e.poisonS+1);break;
+      case 'gust': e.dist=Math.max(0,e.dist-.35);spawnParticles(e.x,e.y,'#aee9d8',5,.9);break;
+      case 'trident': e.dist=Math.max(0,e.dist-.22);break;
+      case 'chesser': e.marks++;if(e.marks>=3){e.marks=0;e.stunT=Math.max(e.stunT,2);
+        addFloat(e.x,e.y-.6,'定!','#c8b890');}break;
+      case 'gardener': if(Math.random()<.2){e.rootT=.8;e.bleedT=3;}break;
+      case 'reporter': e.reportT=4;if(Math.random()<.15)e.stunT=.6;break;
+      case 'critsplash': if(crit){
+        B.enemies.forEach(o=>{if(o!==e&&!o.dead&&Math.hypot(o.x-e.x,o.y-e.y)<1.2)
+          damageEnemy(o,towerDmg(t)*.5,t,{});});
+        B.sfx.push({type:'ring',x:e.x,y:e.y,t:0,dur:.3,r:1.2,color:'#ff6b8a'});}break;
+      case 'detective':
+        if(e.hp/e.maxhp<.12){addFloat(e.x,e.y-.7,'结案','#ffd66b');killEnemy(e,t);}break;
+    }
+  };
+}
+function fireShot(t,e,extra){
+  const c=CHAR_BY_ID[t.cid];
+  const s=Object.assign({x:t.x,y:t.y-.2,target:e,sp:6.5,dmg:towerDmg(t),
+    color:c.color,src:t,kind:c.mech},extra||{});
+  if(s.pierce){
+    const dx=e.x-t.x,dy=e.y-t.y,L=Math.hypot(dx,dy)||1;
+    s.dx=dx/L;s.dy=dy/L;s.left=c.range;s.hits={};
+  }
+  if(c.mech==='detective')s.dmg*=1.2;   // 洞察破绽：附加伤害
+  if(c.mech==='sharpshot'&&e.hp>=e.maxhp)s.dmg*=1.6;
+  B.shots.push(s);
+}
+function performAttack(t,c,target){
+  const m=c.mech;
+  if(m==='lightning'){ // 雷震：瞬发连锁
+    strikeLightning(t.x,t.y,target.x,target.y);
+    damageEnemy(target,towerDmg(t),t,{onHit:(e)=>{
+      if(Math.random()<.25)e.stunT=1;
+      if(Math.random()<.2){B.sfx.push({type:'boom',x:e.x,y:e.y,t:0,dur:.35,r:1.2,color:'#b69bff'});
+        B.enemies.forEach(o=>{if(o!==e&&!o.dead&&Math.hypot(o.x-e.x,o.y-e.y)<1.3)
+          damageEnemy(o,towerDmg(t)*.6,t,{});});}}});
+    return;
+  }
+  if(m==='taoist'){ // 道士：符箓连锁3
+    let cur=target,from={x:t.x,y:t.y};const hit={};
+    for(let i=0;i<3&&cur;i++){
+      hit[cur.uid]=1;
+      strikeLightning(from.x,from.y,cur.x,cur.y,'#d8f0a0');
+      damageEnemy(cur,towerDmg(t)*(.9-i*.1),t,{onHit:e=>{if(Math.random()<.15)e.dist=Math.max(0,e.dist-1);}});
+      from=cur;
+      cur=B.enemies.filter(o=>!o.dead&&!hit[o.uid]&&Math.hypot(o.x-from.x,o.y-from.y)<2.4)
+        .sort((a,b)=>Math.hypot(a.x-from.x,a.y-from.y)-Math.hypot(b.x-from.x,b.y-from.y))[0];
+    }
+    return;
+  }
+  if(m==='assassin'){ // 刺客：第四击绝杀最远
+    t.combo++;
+    if(t.combo>=4){t.combo=0;
+      const far=B.enemies.filter(e=>!e.dead).sort((a,b)=>b.dist-a.dist)[0]||target;
+      B.sfx.push({type:'dash',x:t.x,y:t.y,x2:far.x,y2:far.y,t:0,dur:.3,color:'#b9a0e8'});
+      damageEnemy(far,towerDmg(t)*2.2,t,{});
+      spawnParticles(far.x,far.y,'#b9a0e8',12,1.4);
+    }else damageEnemy(target,towerDmg(t),t,{});
+    return;
+  }
+  if(m==='swordsman'){ // 剑客：横扫3人
+    const list=B.enemies.filter(e=>!e.dead&&Math.hypot(e.x-t.x,e.y-t.y)<c.range)
+      .sort((a,b)=>b.dist-a.dist).slice(0,3);
+    list.forEach(e=>{damageEnemy(e,towerDmg(t),t,{});
+      B.sfx.push({type:'slash',x:e.x,y:e.y,t:0,dur:.25});});
+    return;
+  }
+  if(m==='monk'||m==='shieldblock'||m==='trident'){ // 近战即时
+    damageEnemy(target,towerDmg(t),t,{onHit:onHitFor(t)});
+    B.sfx.push({type:'hit',x:target.x,y:target.y,t:0,dur:.2,color:c.color});
+    return;
+  }
+  if(m==='runner'){ // 运动员：小范围撞飞
+    B.enemies.filter(e=>!e.dead&&Math.hypot(e.x-target.x,e.y-target.y)<.9)
+      .forEach(e=>{damageEnemy(e,towerDmg(t),t,{onHit:en=>{en.dist=Math.max(0,en.dist-.15);}});});
+    B.sfx.push({type:'dash',x:t.x,y:t.y,x2:target.x,y2:target.y,t:0,dur:.25,color:'#ffe08a'});
+    return;
+  }
+  if(m==='dancer'){ // 舞姬：剑舞范围
+    B.enemies.filter(e=>!e.dead&&Math.hypot(e.x-t.x,e.y-t.y)<1.5)
+      .forEach(e=>damageEnemy(e,towerDmg(t),t,{}));
+    B.sfx.push({type:'ring',x:t.x,y:t.y,t:0,dur:.35,r:1.5,color:'#f0a8d0'});
+    return;
+  }
+  if(m==='engineer'){ // 机关师：三连弩
+    fireShot(t,target);
+    const others=B.enemies.filter(e=>!e.dead&&e!==target)
+      .sort((a,b)=>Math.hypot(a.x-t.x,a.y-t.y)-Math.hypot(b.x-t.x,b.y-t.y)).slice(0,2);
+    others.forEach(o=>fireShot(t,o));
+    return;
+  }
+  if(m==='pierce'){fireShot(t,target,{pierce:true});return;}
+  // 其余远程
+  fireShot(t,target);
+}
+function inkBlast(t,v){
+  B.sfx.push({type:'ink',x:v.x,y:v.y,t:0,dur:.5,r:1.4});
+  B.enemies.filter(e=>!e.dead&&Math.hypot(e.x-v.x,e.y-v.y)<1.4)
+    .forEach(e=>damageEnemy(e,towerDmg(t)*1.6,t,{}));
+}
+function strikeLightning(x1,y1,x2,y2,color){
+  B.sfx.push({type:'bolt',x:x1,y:y1,x2,y2,t:0,dur:.25,color:color||'#b69bff'});
+}
+
+/* ---------------- 投射物 ---------------- */
+function updateShots(dt){
+  for(const s of B.shots){
+    s.t=(s.t||0)+dt;
+    if(s.kind==='bad'){ // 老师的远程攻击
+      const tx=s.target.uid?s.target.x:s.tx, ty=s.target.uid?s.target.y:s.ty;
+      const d=Math.hypot(tx-s.x,ty-s.y);
+      if(d<.25||!s.target.hp){
+        if(s.target.hp>0)damageTower(s.target,s.dmg,null);
+        s.dead=true;continue;
+      }
+      s.x+=(tx-s.x)/d*s.sp*dt;s.y+=(ty-s.y)/d*s.sp*dt;
+      continue;
+    }
+    if(s.pierce){
+      s.x+=s.dx*s.sp*dt;s.y+=s.dy*s.sp*dt;s.left-=s.sp*dt;
+      if(s.left<=0||s.x<-1||s.x>COLS+1||s.y<-1||s.y>ROWS+1){s.dead=true;continue;}
+      for(const e of B.enemies){
+        if(e.dead||s.hits[e.uid])continue;
+        if(Math.hypot(e.x-s.x,e.y-s.y)<.4){s.hits[e.uid]=1;
+          damageEnemy(e,s.dmg,s.src,{onHit:onHitFor(s.src)});}
+      }
+      continue;
+    }
+    // 追踪
+    if(!s.target||s.target.dead){
+      const nt=B.enemies.filter(e=>!e.dead).sort((a,b)=>
+        Math.hypot(a.x-s.x,a.y-s.y)-Math.hypot(b.x-s.x,b.y-s.y))[0];
+      if(nt&&Math.hypot(nt.x-s.x,nt.y-s.y)<1.2)s.target=nt;else{s.dead=true;continue;}
+    }
+    const d=Math.hypot(s.target.x-s.x,s.target.y-s.y);
+    if(d<.28){
+      damageEnemy(s.target,s.dmg,s.src,{pure:s.pure,onHit:onHitFor(s.src)});
+      s.dead=true;continue;
+    }
+    s.x+=(s.target.x-s.x)/d*s.sp*dt;s.y+=(s.target.y-s.y)/d*s.sp*dt;
+  }
+  B.shots=B.shots.filter(s=>!s.dead);
+}
+
+/* ---------------- 粒子 / 特效数据 ---------------- */
+function spawnParticles(x,y,color,n,power){
+  for(let i=0;i<n;i++){
+    const a=Math.random()*Math.PI*2,sp=(.5+Math.random())*power;
+    B.parts.push({x,y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp-.5,
+      t:0,dur:.4+Math.random()*.5,color,size:2+Math.random()*3});
+  }
+}
+function updateFx(dt){
+  B.parts.forEach(p=>{p.t+=dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=2*dt;});
+  B.parts=B.parts.filter(p=>p.t<p.dur);
+  B.floats.forEach(f=>f.t+=dt);
+  B.floats=B.floats.filter(f=>f.t<f.dur);
+  B.sfx.forEach(s=>s.t+=dt);
+  B.sfx=B.sfx.filter(s=>s.t<s.dur);
+}
+
+/* ============================================================
+   全屏大招
+============================================================ */
+function fireUlt(t){
+  if(t.charge<1)return;
+  const c=CHAR_BY_ID[t.cid],u=c.ult;
+  t.charge=0;
+  B.shake=1.2;
+  // 全屏伤害
+  B.enemies.forEach(e=>{
+    if(e.dead)return;
+    damageEnemy(e,towerDmg(t)*u.pow,t,{});
+    if(u.status&&!e.dead)applyUltStatus(e,u.status);
+  });
+  // 特殊效果
+  switch(u.special){
+    case 'gold300': addGold(t.side,300);addFloat(COLS/2,2,'+300💰','#ffd66b');break;
+    case 'gold250buff':
+      addGold(t.side,250);
+      B.towers.forEach(o=>o.dmgBuffT=Math.max(o.dmgBuffT,8));break;
+    case 'fullheal':
+      B.towers.forEach(o=>{o.hp=o.maxhp;spawnParticles(o.x,o.y,'#8ff0b8',10,1);});break;
+    case 'shield6': B.towers.forEach(o=>o.blockT=6);break;
+    case 'ratestbuff': B.towers.forEach(o=>o.rateBuffT=Math.max(o.rateBuffT,8));break;
+    case 'dmgbuff': B.towers.forEach(o=>{o.dmgBuffT=Math.max(o.dmgBuffT,10);});break;
+    case 'execute30':
+      B.enemies.forEach(e=>{if(!e.dead&&e.hp/e.maxhp<.3){addFloat(e.x,e.y-.7,'处决','#ffd66b');killEnemy(e,t);}});break;
+  }
+  spawnScreenFX(u.fx,c);
+  if(B.net==='host') sendNet({t:'fx',fx:u.fx,cid:c.id,name:u.name});
+}
+function applyUltStatus(e,st){
+  if(st.stun)e.stunT=Math.max(e.stunT,st.stun);
+  if(st.freeze)e.freezeT=Math.max(e.freezeT,st.freeze);
+  if(st.slow)e.slowT=Math.max(e.slowT,st.slow);
+  if(st.root)e.rootT=Math.max(e.rootT,st.root);
+  if(st.silence)e.silenceT=Math.max(e.silenceT,st.silence);
+  if(st.bleed)e.bleedT=Math.max(e.bleedT,st.bleed);
+  if(st.burn){e.burnT=Math.max(e.burnT,st.burn);e.burnS=3;}
+  if(st.poison){e.poisonT=4;e.poisonS=Math.min(5,st.poison);}
+  if(st.push)e.dist=Math.max(0,e.dist-st.push);
+}
+function spawnScreenFX(fx,c){
+  const parts=[];
+  for(let i=0;i<60;i++)parts.push({x:Math.random(),y:Math.random(),
+    vx:(Math.random()-.5)*.3,vy:Math.random()*.5+.1,s:2+Math.random()*5,r:Math.random()*Math.PI});
+  B.sfx.push({screen:fx,t:0,dur:1.9,cid:c.id,cColor:c.color,parts});
+}
+function remoteScreenFX(fx,cid){
+  const c=CHAR_BY_ID[cid];B&&B.sfx.push((()=>{const s={screen:fx,t:0,dur:1.9,cid,cColor:c.color,parts:[]};
+  for(let i=0;i<60;i++)s.parts.push({x:Math.random(),y:Math.random(),vx:(Math.random()-.5)*.3,vy:Math.random()*.5+.1,s:2+Math.random()*5,r:Math.random()*Math.PI});
+  return s;})());
+  B&&(B.shake=1.2);
+}
+
+/* ---------------- 结算 ---------------- */
+function checkEnd(dt){
+  if(B.ended)return;
+  if(B.lives<=0){endBattle(false);return;}
+  const cleared=B.waveIndex>=B.waves.length&&!B.spawn.length&&B.enemies.length===0;
+  if(cleared){B.endT=(B.endT||0)+dt;if(B.endT>1)endBattle(true);}
+  else B.endT=0;
+}
+function applyReward(win){
+  if(!win)return;
+  const reward=40+B.lv*3;
+  const stars=B.lives>=15?3:B.lives>=8?2:1;
+  save.starWords+=reward;
+  if(B.lv===save.unlocked&&B.lv<60)save.unlocked=B.lv+1;
+  save.stars[B.lv]=Math.max(save.stars[B.lv]||0,stars);
+  persist();
+  return {reward,stars};
+}
+function endBattle(win){
+  if(B.ended)return;B.ended=true;B.state=win?'win':'lose';
+  const r=applyReward(win);
+  if(B.net==='host')sendNet({t:'end',win,reward:r&&r.reward,stars:r&&r.stars,lv:B.lv});
+  showEndModal(win,r);
+}
+function guestEndBattle(win,reward,stars,lv){
+  if(B.ended)return;B.ended=true;B.state=win?'win':'lose';
+  if(win){
+    save.starWords+=reward;
+    if(lv===save.unlocked&&lv<60)save.unlocked=lv+1;
+    save.stars[lv]=Math.max(save.stars[lv]||0,stars);
+    persist();
+  }
+  showEndModal(win,{reward,stars},true);
+}
+function showEndModal(win,r,isGuest){
+  setTimeout(()=>{
+    $('modalBody').innerHTML=`
+    <h2 style="font-size:30px">${win?'🎉 关卡胜利！':'💔 防线告破'}</h2>
+    <div style="text-align:center;line-height:2.3;font-size:16px">
+      ${win?`剩余生命 ❤️ ${B.lives}<br>${r.stars===3?'<span style="font-size:26px">★★★</span>':r.stars===2?'★★':'★'}<br>
+      获得 <b style="color:var(--gold)">✨ ${r.reward} 星语</b><br>
+      <span style="opacity:.7">可前往「星语祈愿」抽取国风换装</span>`
+      :'老师们突破了同窗们的防线，再试一次吧！'}
+    </div>
+    <div style="display:flex;gap:12px;justify-content:center;margin-top:18px;flex-wrap:wrap">
+      <button class="btn" onclick="closeModal();restartBattle()">🔄 再战一次</button>
+      <button class="btn ghost" onclick="closeModal();exitBattle()">🗺 返回地图</button>
+    </div>`;
+    $('modalMask').classList.add('show');
+  },700);
+}
+function restartBattle(){
+  const lv=B.lv,net=B.net,conn=B.conn;
+  if(net==='guest'){toast('请等待房主重新开始');return;}
+  if(net==='host')sendNet({t:'restart',lv});
+  startBattle(lv,{net,conn,side:B.mySide});
+}
+
+/* ---------------- HUD ---------------- */
+function updateHUD(){
+  if(!B)return;
+  $('hudLives').textContent=B.lives;
+  $('hudGold').textContent=Math.floor(B.gold[B.mySide]||0);
+  $('hudWave').textContent=B.waveIndex+'/'+B.waves.length;
+  CHARACTERS.forEach(c=>{
+    const el=$('shop-'+c.id);if(!el)return;
+    el.classList.toggle('sel',B.selectShop===c.id);
+    if(B.lv>=c.unlock)el.classList.toggle('dis',(B.gold[B.mySide]||0)<c.cost);
+  });
+  if(B.selectTower)renderTowerPanel();
+  const wb=$('waveBtn');
+  wb.disabled=B.spawn.length>0||B.waveIndex>=B.waves.length||B.ended;
+  wb.textContent=B.waveIndex>=B.waves.length?'本关波次已尽':'召唤下一波 ▶';
+}
+
+/* ============================================================
+   Canvas 渲染
+============================================================ */
+const ECOLOR={math:'#c96f6f',chinese:'#d08ab2',english:'#6fa8d9',chem:'#8fc96f',can:'#b89060',principal:'#8f5fd9'};
+const DECOR={
+ 0:['🛏','📚','🧺','🪑','💡','🎒'],
+ 1:['💊','🩺','🛌','🧴','🩹','🌡'],
+ 2:['🌳','🚌','🚦','🪨','🍂','🗺'],
+ 3:['🏫','📐','🔔','✏️','🏀','📖'],
+ 4:['💻','🖨','📁','☕','🖊','📎'],
+};
+let decorCache={};
+function decorOf(zone){
+  if(decorCache[zone.from])return decorCache[zone.from];
+  const arr=[];let seed=zone.from*97+13;
+  const rnd=()=>{seed=(seed*9301+49297)%233280;return seed/233280;};
+  const set=DECOR[ZONES.indexOf(zone)];
+  for(let i=0;i<26;i++){
+    const x=.5+rnd()*(COLS-1),y=.5+rnd()*(ROWS-1);
+    if(distToPath(x,y)>1.3)arr.push({x,y,e:set[Math.floor(rnd()*set.length)],s:.5+rnd()*.4,a:.25+rnd()*.2});
+  }
+  decorCache[zone.from]=arr;return arr;
+}
+function render(){
+  if(!B||!B.view)return;
+  const v=B.view;
+  // 联机插值
+  const dt=Math.min(.05,(performance.now()-lastT)/1000+0.016);
+  [...B.enemies,...B.towers,...B.shots].forEach(o=>{
+    if(o.tx!==undefined){
+      o.rx=o.rx??o.tx;o.ry=o.ry??o.ty;
+      const k=Math.min(1,dt*12);o.rx+=(o.tx-o.rx)*k;o.ry+=(o.ty-o.ry)*k;
+    }
+  });
+  ctx.clearRect(0,0,v.w,v.h);
+  ctx.save();
+  if(B.shake>0)ctx.translate((Math.random()-.5)*B.shake*14,(Math.random()-.5)*B.shake*14);
+  ctx.translate(v.ox,v.oy);ctx.scale(v.tile,v.tile);
+  drawWorld();
+  ctx.restore();
+  // 全屏特效
+  B.sfx.filter(s=>s.screen).forEach(s=>drawScreenFX(s,v.w,v.h));
+}
+function WX(o){return o.rx??o.x;}
+function WY(o){return o.ry??o.y;}
+function drawWorld(){
+  const z=B.zone;
+  ctx.fillStyle=z.ground;ctx.fillRect(0,0,COLS,ROWS);
+  // 网格
+  ctx.strokeStyle='rgba(255,255,255,.05)';ctx.lineWidth=.02;
+  for(let x=1;x<COLS;x++){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,ROWS);ctx.stroke();}
+  for(let y=1;y<ROWS;y++){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(COLS,y);ctx.stroke();}
+  // 装饰
+  decorOf(z).forEach(d=>{ctx.globalAlpha=d.a;ctx.font=d.s+'px serif';
+    ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(d.e,d.x,d.y);});
+  ctx.globalAlpha=1;
+  drawPath(z);
+  drawPlacementGhost();
+  B.towers.forEach(drawTower);
+  B.enemies.forEach(drawEnemy);
+  drawShots();
+  drawWorldSfx();
+  drawParts();
+  drawFloats();
+}
+function drawPath(z){
+  const w=z.way;
+  ctx.lineJoin='round';ctx.lineCap='round';
+  ctx.strokeStyle=z.pathEdge;ctx.lineWidth=.95;
+  ctx.beginPath();ctx.moveTo(w[0][0],w[0][1]);
+  for(let i=1;i<w.length;i++)ctx.lineTo(w[i][0],w[i][1]);ctx.stroke();
+  ctx.strokeStyle=z.path;ctx.lineWidth=.72;
+  ctx.beginPath();ctx.moveTo(w[0][0],w[0][1]);
+  for(let i=1;i<w.length;i++)ctx.lineTo(w[i][0],w[i][1]);ctx.stroke();
+  // 出入口
+  const s=w[0],e=w[w.length-1];
+  ctx.font='.7px serif';ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.fillText('🚪',s[0]+.4,s[1]);
+  ctx.font='.8px serif';ctx.fillText('🏫',e[0]-.6,e[1]);
+}
+function drawPlacementGhost(){
+  if(!B.selectShop)return;
+  const c=CHAR_BY_ID[B.selectShop];
+  const gx=Math.round(B.hoverX),gy=Math.round(B.hoverY);
+  if(gx<0||gx>=COLS||gy<0||gy>=ROWS)return;
+  const ok=cellFree(gx,gy)&&(B.gold[B.mySide]||0)>=c.cost;
+  ctx.fillStyle=ok?'rgba(127,255,180,.3)':'rgba(255,90,90,.3)';
+  ctx.fillRect(gx-.46,gy-.46,.92,.92);
+  ctx.strokeStyle=ok?'#7fffb4':'#ff6b6b';ctx.lineWidth=.05;
+  ctx.strokeRect(gx-.46,gy-.46,.92,.92);
+  ctx.fillStyle='rgba(255,255,255,.08)';
+  ctx.beginPath();ctx.arc(gx,gy,c.range,0,7);ctx.fill();
+}
+function drawTower(t){
+  const c=CHAR_BY_ID[t.cid],x=WX(t),y=WY(t);
+  // 选中 / 射程
+  if(B.selectTower===t){
+    ctx.fillStyle='rgba(255,255,255,.07)';
+    ctx.beginPath();ctx.arc(x,y,c.range,0,7);ctx.fill();
+    ctx.strokeStyle='rgba(255,214,107,.8)';ctx.lineWidth=.05;
+    ctx.beginPath();ctx.arc(x,y,.48,0,7);ctx.stroke();
+  }
+  // 阴影
+  ctx.fillStyle='rgba(0,0,0,.3)';
+  ctx.beginPath();ctx.ellipse(x,y+.3,.32,.12,0,0,7);ctx.fill();
+  // 身体（mini Q版）
+  const r=.34;
+  const grad=ctx.createRadialGradient(x-.1,y-.1,.05,x,y,r);
+  grad.addColorStop(0,c.color);grad.addColorStop(1,shade(c.color,-25));
+  ctx.fillStyle=grad;
+  ctx.beginPath();ctx.arc(x,y,r,0,7);ctx.fill();
+  ctx.strokeStyle='rgba(30,15,50,.8)';ctx.lineWidth=.04;ctx.stroke();
+  // 阵营点
+  if(B.net){ctx.fillStyle=t.side==='host'?'#ffd66b':'#5fd3a4';
+    ctx.beginPath();ctx.arc(x+.24,y-.24,.09,0,7);ctx.fill();}
+  // emoji 小脸
+  ctx.font='.42px serif';ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.fillText(c.emo,x,y+.02);
+  // 状态
+  if(t.stunT>0){ctx.font='.24px serif';ctx.fillText('💫',x+.26,y-.3);}
+  if(t.blockT>0){ctx.strokeStyle='rgba(150,210,255,.8)';ctx.lineWidth=.04;
+    ctx.beginPath();ctx.arc(x,y,.46,0,7);ctx.stroke();}
+  // 血条
+  bar(x-.36,y-.52,.72,.1,t.hp/t.maxhp,'#5fd36a','rgba(0,0,0,.45)');
+  // 大招蓄能
+  if(t.charge>=1){
+    ctx.save();ctx.shadowColor='#ffe98a';ctx.shadowBlur=14;
+    ctx.strokeStyle='#ffe98a';ctx.lineWidth=.05;
+    ctx.beginPath();ctx.arc(x,y,.44,performance.now()/300,performance.now()/300+5);ctx.stroke();
+    ctx.restore();
+    ctx.font='.22px serif';ctx.fillText('✨',x-.28,y-.3);
+  }else if(t.charge>0){
+    ctx.strokeStyle='rgba(255,233,138,.7)';ctx.lineWidth=.045;
+    ctx.beginPath();ctx.arc(x,y,.44,-Math.PI/2,-Math.PI/2+t.charge*Math.PI*2);ctx.stroke();
+  }
+}
+function drawEnemy(e){
+  const x=WX(e),y=WY(e),boss=e.def.flags.includes('boss');
+  const r=boss?.55:.34;
+  ctx.fillStyle='rgba(0,0,0,.3)';
+  ctx.beginPath();ctx.ellipse(x,y+r*.8,r*.85,r*.3,0,0,7);ctx.fill();
+  ctx.fillStyle=ECOLOR[e.key]||'#c96f6f';
+  ctx.beginPath();ctx.arc(x,y,r,0,7);ctx.fill();
+  ctx.strokeStyle=boss?'#ffd66b':'rgba(40,10,20,.8)';ctx.lineWidth=boss?.07:.04;ctx.stroke();
+  ctx.font=(boss?.78:.46)+'px serif';ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.fillText(e.def.emo,x,y+.02);
+  // 状态图标
+  let ix=x-r*.8,iy=y-r-0.05;
+  const ic=[];
+  if(e.freezeT>0)ic.push('🧊');if(e.stunT>0)ic.push('💫');if(e.slowT>0)ic.push('❄');
+  if(e.burnT>0)ic.push('🔥');if(e.poisonT>0)ic.push('☠');if(e.rootT>0)ic.push('🌿');
+  if(e._silenced)ic.push('🤐');
+  ctx.font='.22px serif';
+  ic.forEach(s=>{ctx.fillText(s,ix,iy);ix+=.22;});
+  // 血条
+  const w=boss?1:.66;
+  bar(x-w/2,y-r-.22,w,boss?.14:.1,e.hp/e.maxhp,boss?'#ffd66b':'#ff7a7a','rgba(0,0,0,.5)');
+}
+function drawShots(){
+  B.shots.forEach(s=>{
+    const x=WX(s),y=WY(s);
+    ctx.save();ctx.shadowColor=s.color;ctx.shadowBlur=8;
+    if(s.pierce){
+      ctx.strokeStyle=s.color;ctx.lineWidth=.09;ctx.lineCap='round';
+      ctx.beginPath();ctx.moveTo(x-s.dx*.3,y-s.dy*.3);ctx.lineTo(x+s.dx*.18,y+s.dy*.18);ctx.stroke();
+    }else{
+      ctx.fillStyle=s.color;
+      ctx.beginPath();ctx.arc(x,y,s.kind==='bad'?.09:.08,0,7);ctx.fill();
+    }
+    ctx.restore();
+  });
+}
+function drawWorldSfx(){
+  B.sfx.forEach(s=>{
+    const k=s.t/s.dur,a=1-k;
+    if(s.type==='bolt'){
+      ctx.save();ctx.globalAlpha=a;ctx.strokeStyle=s.color;ctx.lineWidth=.08;ctx.shadowColor=s.color;ctx.shadowBlur=10;
+      ctx.beginPath();const segs=6;ctx.moveTo(s.x,s.y);
+      for(let i=1;i<=segs;i++){const t=i/segs;
+        ctx.lineTo(s.x+(s.x2-s.x)*t+(Math.random()-.5)*.3,s.y+(s.y2-s.y)*t+(Math.random()-.5)*.3);}
+      ctx.stroke();ctx.restore();
+    }else if(s.type==='boom'||s.type==='ring'||s.type==='ink'){
+      ctx.save();ctx.globalAlpha=a*.8;
+      if(s.type==='ink')ctx.fillStyle='#241a3a';else ctx.fillStyle=s.color||s.color;
+      ctx.strokeStyle=s.color;ctx.lineWidth=.06;
+      ctx.beginPath();ctx.arc(s.x,s.y,(s.r||1)*k+(s.type==='ink'?0:.1),0,7);
+      if(s.type==='ink')ctx.fill();else ctx.stroke();
+      ctx.restore();
+    }else if(s.type==='dash'){
+      ctx.save();ctx.globalAlpha=a;ctx.strokeStyle=s.color;ctx.lineWidth=.1;ctx.lineCap='round';
+      ctx.beginPath();ctx.moveTo(s.x,s.y);ctx.lineTo(s.x2,s.y2);ctx.stroke();ctx.restore();
+    }else if(s.type==='slash'||s.type==='hit'){
+      ctx.save();ctx.globalAlpha=a;ctx.strokeStyle=s.color||'#fff';ctx.lineWidth=.08;
+      ctx.beginPath();ctx.arc(s.x,s.y,.4,k*2,k*2+1.6);ctx.stroke();ctx.restore();
+    }else if(s.type==='talisman'){
+      ctx.save();ctx.globalAlpha=a;ctx.font='.4px serif';ctx.textAlign='center';
+      ctx.fillText('📜',s.x,s.y-k*.4);ctx.restore();
+    }
+  });
+}
+function drawParts(){
+  B.parts.forEach(p=>{
+    const a=1-p.t/p.dur;
+    ctx.globalAlpha=a;ctx.fillStyle=p.color;
+    ctx.beginPath();ctx.arc(p.x,p.y,p.size/40,0,7);ctx.fill();
+  });
+  ctx.globalAlpha=1;
+}
+function drawFloats(){
+  ctx.textAlign='center';ctx.font='bold .26px "Microsoft YaHei",sans-serif';
+  B.floats.forEach(f=>{
+    const a=1-f.t/f.dur;
+    ctx.globalAlpha=a;ctx.fillStyle=f.color;
+    ctx.fillText(f.text,f.x,f.y-f.t*.5);
+  });
+  ctx.globalAlpha=1;
+}
+function bar(x,y,w,h,p,fg,bg){
+  ctx.fillStyle=bg;ctx.fillRect(x,y,w,h);
+  ctx.fillStyle=fg;ctx.fillRect(x,y,Math.max(0,w)*Math.min(1,p),h);
+}
+function shade(hex,n){
+  const m=hex.replace('#','');const r=Math.max(0,Math.min(255,parseInt(m.substr(0,2),16)+n)),
+    g=Math.max(0,Math.min(255,parseInt(m.substr(2,2),16)+n)),
+    b=Math.max(0,Math.min(255,parseInt(m.substr(4,2),16)+n));
+  return '#'+[r,g,b].map(v=>v.toString(16).padStart(2,'0')).join('');
+}
+
+/* ---------------- 全屏大招特效 + 立绘切入 ---------------- */
+const FX_STYLE={
+ barrage:['#ffd66b','🏹'],barrage2:['#8ad0ff','💠'],blizzard:['#bfeaff','❄️'],gold:['#ffd66b','💰'],
+ shield:['#9fc8ff','🛡'],thunder:['#b69bff','⚡'],meteor:['#ff8a5b','🔥'],wind:['#aee9d8','🌪'],
+ heal:['#8ff0b8','💚'],slash:['#ff6b8a','🗡'],blades:['#e8e0b0','⚔️'],summon:['#e6c8f0','📜'],
+ poison:['#9be07a','🧪'],charm:['#f0b8d8','🎐'],ink:['#5a4f7a','🖌'],seal:['#ffd66b','✨'],
+ palm:['#e8c890','🙏'],bloom:['#f09bb0','🌺'],feast:['#ffd098','🍜'],turret:['#b8c4d8','🎯'],
+ dash:['#ffe08a','💨'],dance:['#f0a8d0','💃'],flash:['#ffffff','📸'],bagua:['#d0a8e8','☯️'],
+ judge:['#ffb06b','🔍'],
+};
+function drawScreenFX(s,W,H){
+  const t=s.t/s.dur, [col,emo]=FX_STYLE[s.screen]||['#fff','✨'];
+  const c=CHAR_BY_ID[s.cid];
+  // 闪光
+  const flashA=t<.18?(.55*(1-t/.18)):(t>.7?((t-.7)/.3)*.25:0);
+  ctx.fillStyle=hexA(col,flashA);ctx.fillRect(0,0,W,H);
+  // 暗角
+  ctx.fillStyle='rgba(10,5,25,'+(0.35*(1-Math.abs(t-.5)*1.2))+')';ctx.fillRect(0,0,W,H);
+  // 全屏图标粒子
+  s.parts.forEach((p,i)=>{
+    const dir=(s.screen==='wind'||s.screen==='dash')?1:-1;
+    p.x+=p.vx*.016*dir;p.y+=p.vy*.016*(s.screen==='meteor'?2.4:1);
+    if(p.y>1.05)p.y=-.05;if(p.x>1.05)p.x=-.05;if(p.x<-.05)p.x=1.05;
+    const wobble=Math.sin(t*8+i)*.012;
+    ctx.globalAlpha=Math.min(1,.35+.65*Math.sin(Math.PI*t));
+    ctx.font=(p.s*7)+'px serif';ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText(emo,p.x*W+wobble*W,p.y*H);
+  });
+  ctx.globalAlpha=1;
+  // 中心爆发环
+  if(t<.5){
+    ctx.strokeStyle=hexA(col,(1-t/.5)*.9);ctx.lineWidth=6*(1-t/.5)+1;
+    ctx.beginPath();ctx.arc(W/2,H/2,t*Math.max(W,H)*.7,0,7);ctx.stroke();
+  }
+  // 立绘切入
+  const inE=Math.min(1,t/.22),outE=t>.72?1-(t-.72)/.28:1;
+  const e2=Math.min(inE,outE);
+  const pw=Math.min(280,W*.32),ph=pw*4/3;
+  const ix=W-pw*ease(e2)+10,iy=H*.5-ph/2;
+  ctx.save();
+  ctx.globalAlpha=e2;
+  // 立绘底板
+  ctx.shadowColor=col;ctx.shadowBlur=40;
+  roundRect(ix-10,iy-10,pw+20,ph+20,18);ctx.fillStyle=hexA(s.cColor,.92);ctx.fill();
+  ctx.shadowBlur=0;
+  roundRect(ix,iy,pw,ph,12);ctx.clip();
+  ctx.fillStyle='#2c1f40';ctx.fillRect(ix,iy,pw,ph);
+  const img=getImg(portraitURL(charPortraitPrompt(c)));
+  if(img.complete&&img.naturalWidth)ctx.drawImage(img,ix,iy,pw,ph);
+  else{ctx.font='80px serif';ctx.textAlign='center';ctx.fillText(c.emo,ix+pw/2,iy+ph/2);}
+  ctx.restore();
+  // 大招名横幅
+  if(e2>.3){
+    ctx.save();ctx.globalAlpha=Math.min(1,(e2-.3)/.4);
+    const bw=Math.min(520,W*.6),bh=84,bx=20,by=H*.5-bh/2-30;
+    const g=ctx.createLinearGradient(bx,0,bx+bw,0);
+    g.addColorStop(0,hexA('#1a0f30',.95));g.addColorStop(1,hexA(col,.25));
+    ctx.fillStyle=g;roundRect(bx,by,bw,bh,14);ctx.fill();
+    ctx.strokeStyle=hexA(col,.9);ctx.lineWidth=2;roundRect(bx,by,bw,bh,14);ctx.stroke();
+    ctx.fillStyle='#fff';ctx.textAlign='left';
+    ctx.font='bold 15px "Microsoft YaHei"';ctx.fillText(c.emo+' '+c.name+' · '+c.cls,bx+22,by+28);
+    ctx.font='bold 34px "STKaiti","KaiTi",serif';ctx.fillStyle=hexA('#ffe9a8',1);
+    ctx.shadowColor=col;ctx.shadowBlur=16;
+    ctx.fillText('✦ '+c.ult.name,bx+22,by+64);
+    ctx.restore();
+  }
+}
+function ease(x){return 1-Math.pow(1-x,3);}
+function roundRect(x,y,w,h,r){
+  ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();
+}
+function hexA(hex,a){
+  const m=hex.replace('#','');
+  return `rgba(${parseInt(m.substr(0,2),16)},${parseInt(m.substr(2,2),16)},${parseInt(m.substr(4,2),16)},${a})`;
+}
+
+/* ============================================================
+   联机大厅 · PeerJS 房间码
+============================================================ */
+const NET={peer:null,conn:null,role:null,code:null,lv:1,trying:false};
+function sendNet(msg){
+  const c=(B&&B.conn)||NET.conn;
+  if(c&&c.open)c.send(msg);
+}
+function openLobby(){
+  showScreen('lobby');
+  $('lobbyMain').style.display='';
+  $('lobbyRoom').style.display='none';
+  $('joinBox').style.display='none';
+  $('lobbyMsg').textContent=typeof Peer==='undefined'
+    ?'⚠️ 联机组件未加载（需要联网）。你仍可直接进行单人冒险。':'';
+}
+function toggleJoin(){$('joinBox').style.display=$('joinBox').style.display==='none'?'block':'none';}
+function genCode(){return String(100000+Math.floor(Math.random()*900000));}
+
+function createRoom(){
+  if(typeof Peer==='undefined'){toast('联机组件未加载，请检查网络');return;}
+  if(NET.trying)return;NET.trying=true;
+  $('lobbyMsg').textContent='正在创建房间…';
+  let tries=0;
+  (function attempt(){
+    const code=genCode();
+    let opened=false,timer=setTimeout(()=>{
+      if(!opened){try{peer.destroy();}catch(e){}$('lobbyMsg').textContent='网络繁忙，请重试';NET.trying=false;}
+    },12000);
+    const peer=new Peer('xyxjroom'+code,{debug:0});
+    peer.on('open',()=>{
+      opened=true;clearTimeout(timer);
+      NET.peer=peer;NET.role='host';NET.code=code;NET.trying=false;
+      enterRoomLobby('🏠 我的房间（房主）');
+      peer.on('connection',c=>{
+        if(NET.conn&&NET.conn.open){c.on('open',()=>c.send({t:'toast',msg:'房间已满员'}));setTimeout(()=>c.destroy(),500);return;}
+        NET.conn=c;bindHostConn(c);
+      });
+    });
+    peer.on('error',err=>{
+      clearTimeout(timer);
+      try{peer.destroy();}catch(e){}
+      if((err.type==='unavailable-id'||err.type==='id-taken')&&tries<10){tries++;attempt();}
+      else{$('lobbyMsg').textContent='创建失败：'+(err.type||'网络错误')+'，请重试';NET.trying=false;}
+    });
+  })();
+}
+function bindHostConn(c){
+  c.on('open',()=>{
+    $('roomPlayers').innerHTML='✅ 队友已加入！<br>选择关卡后点击「开始战斗」';
+    sendNet({t:'lobby',lv:NET.lv});
+  });
+  c.on('data',m=>hostOnMsg(m,c));
+  c.on('close',()=>{
+    $('roomPlayers').textContent='队友已离开，等待新队友…';
+    NET.conn=null;
+  });
+}
+function joinRoom(){
+  if(typeof Peer==='undefined'){toast('联机组件未加载，请检查网络');return;}
+  const code=($('joinCode').value||'').replace(/\D/g,'');
+  if(code.length!==6){toast('请输入 6 位房间码');return;}
+  $('lobbyMsg').textContent='正在加入房间 '+code+' …';
+  const peer=new Peer({debug:0});
+  let done=false,timer=setTimeout(()=>{if(!done){
+    $('lobbyMsg').textContent='连接超时：请确认房间码正确且双方网络正常';
+    try{peer.destroy();}catch(e){}}},12000);
+  peer.on('open',()=>{
+    const conn=peer.connect('xyxjroom'+code,{reliable:true});
+    NET.peer=peer;
+    conn.on('open',()=>{
+      done=true;clearTimeout(timer);
+      NET.conn=conn;NET.role='guest';NET.code=code;
+      enterRoomLobby('🛜 好友房间（队友）');
+      $('hostLevelPick').style.display='none';
+      $('startRoomBtn').style.display='none';
+      $('roomCodeBig').textContent=code;
+      $('hostCodeWrap').querySelector('div').textContent='房间码';
+      $('roomPlayers').textContent='已连接房主，等待开始战斗…';
+      conn.on('data',m=>guestOnMsg(m));
+      conn.on('close',()=>{
+        if(B&&B.net==='guest'){toast('房主已离开房间');setTimeout(()=>{if(B)exitBattle();},800);}
+        else{$('roomPlayers').textContent='与房主的连接已断开';}
+      });
+    });
+    conn.on('error',()=>{$('lobbyMsg').textContent='加入失败：请确认房间码是否正确';});
+  });
+  peer.on('error',err=>{
+    clearTimeout(timer);
+    $('lobbyMsg').textContent=err.type==='peer-unavailable'?'房间不存在：请核对房间码':'连接失败：'+err.type;
+    try{peer.destroy();}catch(e){}
+  });
+}
+function enterRoomLobby(title){
+  $('lobbyMain').style.display='none';
+  $('lobbyRoom').style.display='';
+  $('lobbyRoleTitle').textContent=title;
+  $('roomCodeBig').textContent=NET.code||'------';
+  $('hostLevelPick').style.display=NET.role==='host'?'':'none';
+  $('startRoomBtn').style.display=NET.role==='host'?'':'none';
+  $('roomPlayers').textContent=NET.role==='host'?'等待好友输入房间码加入…':'连接中…';
+  if(NET.role==='host')renderLobbyLevels();
+}
+function renderLobbyLevels(){
+  const box=$('lobbyLevels');box.innerHTML='';
+  for(let lv=1;lv<=Math.min(60,save.unlocked);lv++){
+    const s=document.createElement('span');
+    s.textContent=lv;if(lv===NET.lv)s.classList.add('sel');
+    s.onclick=()=>{NET.lv=lv;
+      box.querySelectorAll('span').forEach(x=>x.classList.remove('sel'));s.classList.add('sel');
+      sendNet({t:'lobby',lv});};
+    box.appendChild(s);
+  }
+}
+function hostStartBattle(){
+  if(!NET.conn||!NET.conn.open){toast('队友尚未加入');return;}
+  sendNet({t:'start',lv:NET.lv});
+  startBattle(NET.lv,{net:'host',conn:NET.conn,side:'host'});
+}
+function leaveLobby(){
+  try{if(NET.conn)NET.conn.close();}catch(e){}
+  try{if(NET.peer)NET.peer.destroy();}catch(e){}
+  Object.assign(NET,{peer:null,conn:null,role:null,code:null,trying:false});
+  $('lobbyMain').style.display='';$('lobbyRoom').style.display='none';
+  $('lobbyMsg').textContent='';
+}
+
+/* ---------------- 主机：接收队友操作 ---------------- */
+function hostOnMsg(m,c){
+  if(m.t==='act')hostDoAction(m.act);
+}
+function hostDoAction(a){
+  if(!B)return;
+  if(a.a==='place'){
+    if(B.gold.guest<CHAR_BY_ID[a.cid].cost){sendNet({t:'toast',msg:'队友金币不足'});return;}
+    if(!cellFree(a.x,a.y)){sendNet({t:'toast',msg:'该位置无法部署'});return;}
+    B.gold.guest-=CHAR_BY_ID[a.cid].cost;
+    const ch=CHAR_BY_ID[a.cid];
+    B.towers.push({uid:'g'+(B.uidN++),cid:a.cid,x:a.x,y:a.y,side:'guest',
+      hp:ch.hp,maxhp:ch.hp,cd:0,charge:0,combo:0,timer:0,stunT:0,blockT:0,dmgBuffT:0,rateBuffT:0});
+    spawnParticles(a.x,a.y,ch.color,16,1);
+  }else if(a.a==='sell'){
+    const t=B.towers.find(x=>x.uid===a.uid);
+    if(t&&t.side==='guest'){addGold('guest',Math.round(CHAR_BY_ID[t.cid].cost*.7));
+      B.towers=B.towers.filter(x=>x!==t);}
+  }else if(a.a==='ult'){
+    const t=B.towers.find(x=>x.uid===a.uid);
+    if(t&&t.side==='guest')fireUlt(t);
+  }else if(a.a==='wave'){
+    callNextWave(false);
+  }else if(a.a==='leave'){
+    if(NET.conn){try{NET.conn.close();}catch(e){}NET.conn=null;}
+  }
+}
+
+/* ---------------- 队友：接收主机消息 ---------------- */
+function guestOnMsg(m){
+  if(m.t==='lobby'&&(!B||!B.ended)){
+    $('roomPlayers').textContent='已连接房主，房主选择关卡：第 '+m.lv+' 关';
+  }else if(m.t==='start'){
+    startBattle(m.lv,{net:'guest',conn:NET.conn,side:'guest'});
+  }else if(m.t==='restart'){
+    startBattle(m.lv,{net:'guest',conn:NET.conn,side:'guest'});
+  }else if(m.t==='snap'){
+    applySnapshot(m);
+  }else if(m.t==='fx'){
+    remoteScreenFX(m.fx,m.cid);
+  }else if(m.t==='end'){
+    guestEndBattle(m.win,m.reward,m.stars,m.lv);
+  }else if(m.t==='toast'){
+    toast(m.msg);
+  }else if(m.t==='close'){
+    toast('房主已结束房间');
+    if(B){B=null;cancelAnimationFrame(rafId);showScreen('lobby');}
+    leaveLobby();openLobby();
+  }
+}
+
+/* ---------------- 快照同步（15Hz） ---------------- */
+let _lastSnap=0;
+function hostSendSnapshot(){
+  const now=performance.now();
+  if(now-_lastSnap<66)return;_lastSnap=now;
+  const msg={t:'snap',lives:B.lives,wi:B.waveIndex,wl:B.waves.length,
+    sp:B.spawn.length,gold:{h:Math.floor(B.gold.host),g:Math.floor(B.gold.guest)},
+    ended:B.ended,
+    es:B.enemies.filter(e=>!e.dead).map(e=>({u:e.uid,k:e.key,x:+e.x.toFixed(2),y:+e.y.toFixed(2),
+      hp:Math.ceil(e.hp),m:e.maxhp,
+      st:[+e.freezeT.toFixed(1),+e.stunT.toFixed(1),+e.slowT.toFixed(1),+e.burnT.toFixed(1),
+          +e.poisonT.toFixed(1),+e.rootT.toFixed(1),e._silenced?1:0]})),
+    ts:B.towers.map(t=>({u:t.uid,c:t.cid,x:+t.x.toFixed(2),y:+t.y.toFixed(2),
+      hp:Math.ceil(t.hp),m:t.maxhp,ch:+t.charge.toFixed(2),s:t.side==='host'?1:0,
+      st:+t.stunT.toFixed(1),bl:+t.blockT.toFixed(1)})),
+    ss:B.shots.slice(0,40).map(s=>({x:+s.x.toFixed(2),y:+s.y.toFixed(2),c:s.color,
+      p:s.pierce?1:0,b:s.kind==='bad'?1:0}))};
+  sendNet(msg);
+}
+function applySnapshot(m){
+  if(!B)return;
+  B.lives=m.lives;B.gold.host=m.gold.h;B.gold.guest=m.gold.g;
+  B.waveIndex=m.wi;
+  B.spawn.length=m.sp;
+  // 敌人
+  const emap={};B.enemies.forEach(e=>emap[e.uid]=e);
+  B.enemies=m.es.map(d=>{
+    let e=emap[d.u];
+    if(!e){e={uid:d.u,key:d.k,def:ENEMIES[d.k],rx:d.x,ry:d.y,
+      hp:d.hp,maxhp:d.m,dead:false,
+      freezeT:0,stunT:0,slowT:0,burnT:0,poisonT:0,rootT:0,_silenced:false};
+    }
+    e.tx=d.x;e.ty=d.y;e.hp=d.hp;e.maxhp=d.m;e.key=d.k;e.def=ENEMIES[d.k];
+    e.freezeT=d.st[0];e.stunT=d.st[1];e.slowT=d.st[2];e.burnT=d.st[3];
+    e.poisonT=d.st[4];e.rootT=d.st[5];e._silenced=!!d.st[6];
+    return e;
+  });
+  // 同窗
+  const tmap={};B.towers.forEach(t=>tmap[t.uid]=t);
+  B.towers=m.ts.map(d=>{
+    let t=tmap[d.u];
+    if(!t){t={uid:d.u,cid:d.c,rx:d.x,ry:d.y,side:d.s?'host':'guest'};}
+    t.tx=d.x;t.ty=d.y;t.cid=d.c;t.hp=d.hp;t.maxhp=d.m;t.charge=d.ch;
+    t.side=d.s?'host':'guest';t.stunT=d.st;t.blockT=d.bl;
+    return t;
+  });
+  B.shots=m.ss.map(d=>({rx:d.x,ry:d.y,color:d.c,pierce:!!d.p,kind:d.b?'bad':'',x:d.x,y:d.y}));
+  // 保持选中
+  if(B.selectTower&&B.selectTower.uid){
+    B.selectTower=B.towers.find(t=>t.uid===B.selectTower.uid)||null;
+  }
+}
+
+/* ---------------- 启动 ---------------- */
+refreshMenu();
+
+</script>
+</body>
+</html>
