@@ -820,12 +820,11 @@ function openCodex(){
   showScreen('codex');
   const g=$('codexGrid'); g.innerHTML='';
   CHARACTERS.forEach(c=>{
-    const unlocked=save.unlocked>=c.unlock;
     const d=document.createElement('div');
-    d.className='char-card rarity-'+(skinRarityOf(c)||'N')+(unlocked?'':' locked');
-    d.innerHTML=`<div class="pic">${unlocked?imgHTML(charPortraitPrompt(c),c.emo):'<span class="picfb">🔒</span>'}</div>
-      <div class="nm">${unlocked?c.name:'？？？'}</div><div class="cls">${unlocked?c.cls:'第'+c.unlock+'关解锁'}</div>`;
-    if(unlocked) d.onclick=()=>showCharDetail(c.id);
+    d.className='char-card rarity-'+(skinRarityOf(c)||'N');
+    d.innerHTML=`<div class="pic">${imgHTML(charPortraitPrompt(c),c.emo)}</div>
+      <div class="nm">${c.name}</div><div class="cls">${c.cls}</div>`;
+    d.onclick=()=>showCharDetail(c.id);
     g.appendChild(d);
   });
 }
@@ -845,8 +844,8 @@ function showCharDetail(id){
     const owned=save.skins.includes(s.id);
     const sel=save.equipped[id]===s.id;
     skinsHtml+=`<div class="skin-chip rarity-${s.tier} ${sel?'sel':''}" onclick="${owned?`equipSkin('${s.id}')`:`toast('未拥有该换装')`}">
-      <div class="pic">${owned?imgHTML(skinScenePrompt(s,c),c.emo):'<span class="picfb" style="font-size:26px">🔒<br></span>'}</div>
-      <div class="sn">${owned?s.name:'？？？'}<br><b style="color:var(--rc)">${TIER[s.tier].star}</b></div></div>`;
+      <div class="pic">${imgHTML(skinScenePrompt(s,c),c.emo)}${owned?'<span class="ownbadge" style="position:absolute;top:2px;right:2px;background:var(--rc);color:#000;font-size:10px;padding:1px 4px;border-radius:4px">已拥有</span>':'<span style="position:absolute;top:2px;right:2px;background:rgba(0,0,0,.6);color:#fff;font-size:10px;padding:1px 4px;border-radius:4px">未拥有</span>'}</div>
+      <div class="sn">${s.name}<br><b style="color:var(--rc)">${TIER[s.tier].star}</b></div></div>`;
   });
   // 默认立绘选项
   const defaultSel=!save.equipped[id]?'sel':'';
@@ -867,7 +866,6 @@ function showCharDetail(id){
         ${statBar('射程',c.range,4.4)}${statBar('攻速',c.rate,1.5)}
         ${statBar('暴击',c.crit,.55)}${statBar('闪避',c.dodge,.25)}
         <span class="tag">${c.type==='ranged'?'远程':'近战'}</span>
-        <span class="tag">第 ${c.unlock} 关解锁</span>
       </div>
     </div>
     <h3 style="color:var(--gold);margin:14px 0 6px;font-size:16px">换装立绘</h3>
@@ -1129,12 +1127,11 @@ function cellFree(x,y){
 function buildShop(){
   const bar=$('shopBar');bar.innerHTML='';
   CHARACTERS.forEach(c=>{
-    const locked=B.lv<c.unlock;
     const d=document.createElement('div');
-    d.className='shop-card'+(locked?' dis':'');
+    d.className='shop-card';
     d.id='shop-'+c.id;
-    d.innerHTML=`<div class="emo">${locked?'🔒':c.emo}</div><div class="cost">${c.cost}💰</div><div class="lkey">${c.name}</div>`;
-    if(!locked) d.onclick=()=>{
+    d.innerHTML=`<div class="emo">${c.emo}</div><div class="cost">${c.cost}💰</div><div class="lkey">${c.name}</div>`;
+    d.onclick=()=>{
       B.selectShop = B.selectShop===c.id?0:c.id;
       B.selectTower=null; $('towerPanel').classList.remove('show');
     };
@@ -1809,7 +1806,7 @@ function updateHUD(){
   CHARACTERS.forEach(c=>{
     const el=$('shop-'+c.id);if(!el)return;
     el.classList.toggle('sel',B.selectShop===c.id);
-    if(B.lv>=c.unlock)el.classList.toggle('dis',(B.gold[B.mySide]||0)<c.cost);
+    el.classList.toggle('dis',(B.gold[B.mySide]||0)<c.cost);
   });
   if(B.selectTower)renderTowerPanel();
   const wb=$('waveBtn');
