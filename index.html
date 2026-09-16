@@ -101,8 +101,33 @@ h1,h2,h3{letter-spacing:3px}
 .char-card .pic img{width:100%;height:100%;object-fit:cover}
 .char-card .nm{padding:6px 4px 8px;font-size:15px;font-weight:bold}
 .char-card .cls{font-size:12px;color:#cdbdee}
-.rarity-N{--rc:#b9c2d6} .rarity-R{--rc:#6ec3ff} .rarity-SR{--rc:#c08bff}
-.rarity-SSR{--rc:#ffc95e} .rarity-UR{--rc:#ff7a6b}
+.rarity-星耀{--rc:#c8b8e0} .rarity-月辉{--rc:#8fd0ff} .rarity-日冕{--rc:#ffd060}
+.rarity-星耀 .r-badge{background:#c8b8e0;color:#221033}
+.rarity-月辉 .r-badge{background:#8fd0ff;color:#1a1a3a}
+.rarity-日冕 .r-badge{background:linear-gradient(135deg,#ffd060,#ff8c30);color:#1a0a00}
+/* === 抽卡开场动画 === */
+.gacha-overlay{position:fixed;inset:0;z-index:9999;display:none;overflow:hidden;background:#000}
+.gacha-overlay.show{display:block}
+.gacha-bg-scene{position:absolute;inset:0;background-size:cover;background-position:center;opacity:0;transition:opacity 1s}
+.gacha-bg-scene.show{opacity:.55}
+.gacha-light{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);border-radius:50%;pointer-events:none}
+.gacha-ray{position:absolute;left:50%;top:50%;width:2px;height:0;background:linear-gradient(to bottom,transparent,#fff);transform-origin:top center;transition:height .8s ease-out}
+.gacha-particle{position:absolute;border-radius:50%;pointer-events:none}
+.gacha-reveal{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) scale(.3);opacity:0;text-align:center;transition:all .6s cubic-bezier(.2,1.4,.4,1)}
+.gacha-reveal.show{transform:translate(-50%,-50%) scale(1);opacity:1}
+.gacha-reveal .portrait{width:260px;max-width:70vw;aspect-ratio:3/4;border-radius:20px;overflow:hidden;border:4px solid;box-shadow:0 0 60px;position:relative;margin:0 auto}
+.gacha-reveal .portrait img{width:100%;height:100%;object-fit:cover}
+.gacha-reveal .portrait .placeholder{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:80px;background:#241837}
+.gacha-reveal .tier-badge{display:inline-block;padding:4px 20px;border-radius:20px;font-weight:900;font-size:18px;letter-spacing:4px;margin-top:16px}
+.gacha-reveal .skin-name{font-size:24px;font-weight:bold;color:#fff;margin-top:8px;text-shadow:0 2px 8px rgba(0,0,0,.8)}
+.gacha-reveal .scene-desc{font-size:14px;color:rgba(255,255,255,.8);margin-top:6px;max-width:400px;text-shadow:0 1px 4px rgba(0,0,0,.8)}
+.gacha-reveal .char-name{font-size:16px;color:rgba(255,255,255,.9);margin-top:4px}
+.gacha-skip{position:absolute;bottom:30px;left:50%;transform:translateX(-50%);color:rgba(255,255,255,.6);font-size:14px;cursor:pointer;animation:blink 1.5s infinite}
+@keyframes blink{0%,100%{opacity:.4}50%{opacity:1}}
+.gacha-overlay.tier-星耀 .gacha-light{width:200px;height:200px;background:radial-gradient(circle,rgba(200,184,224,.5),transparent);animation:lightPulse 1s ease-out}
+.gacha-overlay.tier-月辉 .gacha-light{width:400px;height:400px;background:radial-gradient(circle,rgba(143,208,255,.5),transparent);animation:lightPulse 1.2s ease-out}
+.gacha-overlay.tier-日冕 .gacha-light{width:600px;height:600px;background:radial-gradient(circle,rgba(255,208,96,.6),transparent);animation:lightPulse 1.5s ease-out}
+@keyframes lightPulse{0%{width:0;height:0;opacity:1}100%{opacity:.3}}
 .char-card,.skin-frame{border-color:var(--rc,#rgba(255,255,255,.14))}
 .gacha-box{text-align:center;padding:24px 16px}
 .gacha-banner{font-size:26px;color:var(--gold);letter-spacing:6px;margin-bottom:6px}
@@ -238,7 +263,7 @@ h1,h2,h3{letter-spacing:3px}
     <div class="scroll gacha-box">
       <div class="gacha-banner">国风换装 · 绝色同窗</div>
       <p style="opacity:.75;line-height:2">通关关卡可获得「星语」，祈愿获取同窗们的限定换装立绘（纯外观，不影响战斗强度）<br>
-      概率：N 60% / R 28% / SR 9% / SSR 2.5% / UR 0.5%　重复获得转化 50 星语</p>
+      概率：星耀★ 65% / 月辉★★ 28% / 日冕★★★ 7%　重复获得转化 50 星语</p>
       <div class="gacha-btns">
         <button class="btn" onclick="drawGacha(1)">祈愿一次<br><small>100 星语</small></button>
         <button class="btn red" onclick="drawGacha(10)">十连祈愿<br><small>900 星语</small></button>
@@ -297,6 +322,16 @@ h1,h2,h3{letter-spacing:3px}
       </div>
     </div>
   </section>
+
+  <!-- 抽卡开场动画 -->
+  <div id="gachaOverlay" class="gacha-overlay">
+    <div class="gacha-bg-scene" id="gachaBgScene"></div>
+    <div class="gacha-light" id="gachaLight"></div>
+    <div id="gachaRays"></div>
+    <div id="gachaParticles"></div>
+    <div class="gacha-reveal" id="gachaReveal"></div>
+    <div class="gacha-skip" id="gachaSkip">点击继续</div>
+  </div>
 
   <!-- ============ 战斗 ============ -->
   <section id="screen-battle" class="screen">
@@ -510,41 +545,137 @@ const CHARACTERS = [
 ];
 const CHAR_BY_ID = Object.fromEntries(CHARACTERS.map(c=>[c.id,c]));
 
-/* ---------------- 皮肤（祈愿池，纯外观） ---------------- */
-const SKINS = [
-{id:'s1',char:1,name:'赤焰侠客',rarity:'SR',out:'暗红黑金国风汉服劲装，火焰暗纹，红披风'},
-{id:'s2',char:2,name:'锦衣缇骑',rarity:'SSR',out:'玄黑金纹锦衣卫风校服，披风火枪，华贵冷冽'},
-{id:'s3',char:3,name:'广寒仙子',rarity:'UR',out:'月白广袖流仙裙，银冰晶冠，月光仙气'},
-{id:'s4',char:4,name:'天工小匠',rarity:'R',out:'黄铜齿轮工装风校服，护目镜推在额头'},
-{id:'s5',char:5,name:'玄甲军神',rarity:'SSR',out:'黑金铠甲式国风校服，赤红披风，山岳纹巨盾'},
-{id:'s6',char:6,name:'雷公法相',rarity:'SSR',out:'紫金雷公法袍，背后雷环，电光战纹'},
-{id:'s7',char:7,name:'朱雀炎舞',rarity:'SR',out:'朱红朱雀织金汉服长裙，火羽发饰，端庄长袖'},
-{id:'s8',char:8,name:'竹林游侠',rarity:'R',out:'翠绿竹纹短打校服，斗笠与回旋镖'},
-{id:'s9',char:9,name:'青冥剑仙',rarity:'UR',out:'青色仙袍大袖，凌云长剑，仙气缥缈'},
-{id:'s10',char:10,name:'钱塘水君',rarity:'SR',out:'深蓝浪纹铠甲校服，三叉戟寒光，浪头披风'},
-{id:'s11',char:11,name:'杏林仙子',rarity:'UR',out:'淡绿百花仙裙，药葫芦与柳枝，治愈柔光'},
-{id:'s12',char:12,name:'影杀夜衣',rarity:'SSR',out:'纯黑鎏金夜行衣，狐面吊坠，暗紫披风'},
-{id:'s13',char:13,name:'醉里剑歌',rarity:'SR',out:'月白绣剑长衫，酒葫芦挂件，落英满身'},
-{id:'s14',char:14,name:'纸偶巫女',rarity:'R',out:'红白巫女风国风校服，纸偶环绕，符纸发饰'},
-{id:'s15',char:15,name:'五毒苗裳',rarity:'SR',out:'苗银叮当的翠绿毒师长裙，蛊虫纹样'},
-{id:'s16',char:16,name:'秦淮画舫',rarity:'SSR',out:'烟粉织金琵琶仕女服，轻纱披帛，水墨舫影'},
-{id:'s17',char:17,name:'翰林书童',rarity:'R',out:'青色襕衫书童服，簪笔与书卷，清雅'},
-{id:'s18',char:18,name:'泼墨山人',rarity:'R',out:'墨色山水纹宽袖汉服，画笔为簪'},
-{id:'s19',char:19,name:'国手棋师',rarity:'SSR',out:'黑白阴阳纹棋师长袍，白玉棋子冠'},
-{id:'s20',char:20,name:'天师道袍',rarity:'SR',out:'明黄桃木符文天师道袍，拂尘与法剑'},
-{id:'s21',char:21,name:'金身罗汉',rarity:'SR',out:'赤金纹袈裟武僧服，青铜佛珠，怒目金身'},
-{id:'s22',char:22,name:'十二花神',rarity:'R',out:'百花织锦花神襦裙，花环与荆棘藤蔓'},
-{id:'s23',char:23,name:'灶神小厨',rarity:'N',out:'喜庆红白色厨神围裙装，热面蒸汽'},
-{id:'s24',char:24,name:'偃师机巧',rarity:'SR',out:'青铜墨纹偃师机关服，悬浮小型机关鸢'},
-{id:'s25',char:25,name:'逐日少年',rarity:'N',out:'金红田径国风运动服，鎏金发带'},
-{id:'s26',char:26,name:'霓裳羽衣',rarity:'SSR',out:'端庄华丽的七彩霓裳羽衣广袖长裙，孔雀翎扇，惊艳而不暴露'},
-{id:'s27',char:27,name:'金牌记者',rarity:'R',out:'卡其色侦探风衣式校服，金笔记者证'},
-{id:'s28',char:28,name:'司书先生',rarity:'R',out:'靛蓝复古图书馆司书服，银链眼镜'},
-{id:'s29',char:29,name:'钦天监正',rarity:'SSR',out:'星官紫袍钦天监礼服，浑天仪法杖，星空披风'},
-{id:'s30',char:30,name:'神探宰辅',rarity:'UR',out:'焦糖色唐风衣宰辅礼服，金龙暗纹，虎目神探'},
+/* ---------------- 皮肤（祈愿池，每角色3套：星耀/月辉/日冕） ---------------- */
+const TIER={
+  '星耀':{color:'#c8b8e0',rate:.65,star:'★☆☆',glow:'#b8a8d8',label:'星耀'},
+  '月辉':{color:'#8fd0ff',rate:.28,star:'★★☆',glow:'#6ec0ff',label:'月辉'},
+  '日冕':{color:'#ffd060',rate:.07,star:'★★★',glow:'#ffb030',label:'日冕'}
+};
+const SKINS=[
+/* === 楚惊鸿(1) 暴击手·弓 === */
+{s:'11',c:1,n:'赤焰侠客',t:'星耀',o:'暗红黑金国风汉服劲装，火焰暗纹，红披风',sc:'黄昏校场，箭靶林立，残阳如血'},
+{s:'12',c:1,n:'星河落羽',t:'月辉',o:'银黑织星辰弓手礼服，流星发饰，月色披风',sc:'月夜山崖，万星坠落的流星雨，银光漫天'},
+{s:'13',c:1,n:'九霄凤鸣',t:'日冕',o:'金红凤翎神甲礼服，火焰凤冠，神弓璀璨',sc:'九霄云海之上，金色凤鸟环绕的远古神殿'},
+/* === 赫连远(2) 神枪手·火枪 === */
+{s:'21',c:2,n:'锦衣缇骑',t:'星耀',o:'玄黑金纹锦衣卫风校服，披风火枪，华贵冷冽',sc:'皇城甬道，宫灯绵延，暮色庄严'},
+{s:'22',c:2,n:'寒铁霜花',t:'月辉',o:'冰蓝银纹火枪手礼服，霜花披风，月色铠甲',sc:'雪夜长城，烽火台映照月光，万里苍茫'},
+{s:'23',c:2,n:'天罡龙骑',t:'日冕',o:'金紫龙纹将军甲礼服，龙首火枪，帝皇披风',sc:'金銮殿前，龙旗飘扬的宏大仪典，金光万丈'},
+/* === 苏映雪(3) 冰霜法师 === */
+{s:'31',c:3,n:'广寒仙子',t:'星耀',o:'月白广袖流仙裙，银冰晶冠，月光仙气',sc:'冰封湖面，月光倒影，银色旷野'},
+{s:'32',c:3,n:'霜天月华',t:'月辉',o:'银蓝冰晶凤冠礼服，月光纱衣，雪莲绽放',sc:'冰川之巅，巨大冰月在身后升起，极光飘舞'},
+{s:'33',c:3,n:'万古冰封',t:'日冕',o:'白金万冰结晶神袍，冰雪凤凰冠，永恒冰座',sc:'远古冰宫大殿，万丈冰柱矗立，永恒暴风雪'},
+/* === 鲁班宝(4) 发明家 === */
+{s:'41',c:4,n:'天工小匠',t:'星耀',o:'黄铜齿轮工装风校服，护目镜推在额头',sc:'蒸汽作坊，齿轮飞转，黄铜管道纵横'},
+{s:'42',c:4,n:'墨机星盘',t:'月辉',o:'青铜星盘机关礼服，悬浮齿轮仪，月银辉光',sc:'月光下的巨型机关塔，齿轮星轨运转不息'},
+{s:'43',c:4,n:'造化天工',t:'日冕',o:'金铜天工神甲，悬浮巨型机关鸢，创世之轮',sc:'云端巨型工坊，无数机关鸟环绕飞天，壮丽恢弘'},
+/* === 铁如山(5) 盾卫 === */
+{s:'51',c:5,n:'玄甲军神',t:'星耀',o:'黑金铠甲式国风校服，赤红披风，山岳纹巨盾',sc:'古城墙下，旌旗蔽日，军阵森严'},
+{s:'52',c:5,n:'镇岳铁壁',t:'月辉',o:'银黑山岳纹重甲礼服，月光铁壁盾，霜银披风',sc:'月光下的铁壁要塞，万面盾牌列阵如山'},
+{s:'53',c:5,n:'不周山神',t:'日冕',o:'金黑山神铠甲，擎天巨盾，山岳战神披风',sc:'远古不周山巅，天地之间巨盾撑天，恢宏壮阔'},
+/* === 雷震子(6) 雷霆法师 === */
+{s:'61',c:6,n:'雷公法相',t:'星耀',o:'紫金雷公法袍，背后雷环，电光战纹',sc:'雷暴云中，紫色闪电交织，雷鸣轰响'},
+{s:'62',c:6,n:'紫极雷帝',t:'月辉',o:'紫银雷帝礼服，双雷环悬浮，月色雷冠',sc:'月夜雷暴中，巨型雷球悬空，紫色闪电劈地'},
+{s:'63',c:6,n:'万雷天宫',t:'日冕',o:'金紫万雷神袍，九雷环环绕，天雷法相',sc:'九天雷殿之上，万道闪电汇聚成穹顶，惊天动地'},
+/* === 朱烈焰(7) 烈焰法师 === */
+{s:'71',c:7,n:'朱雀炎舞',t:'星耀',o:'朱红朱雀织金汉服长裙，火羽发饰，端庄长袖',sc:'烈焰山谷，岩浆奔流，火光映天'},
+{s:'72',c:7,n:'凤凰涅槃',t:'月辉',o:'金红凤凰礼服，火凤冠，月下焰翼',sc:'月光下的火山口，凤凰火羽照亮夜空，壮美绝伦'},
+{s:'73',c:7,n:'太阳神女',t:'日冕',o:'金红太阳神女华袍，日冕凤冠，万火朝宗',sc:'太阳神宫，万火汇聚的圣坛，金焰冲天而起'},
+/* === 高飞(8) 弹弓手 === */
+{s:'81',c:8,n:'竹林游侠',t:'星耀',o:'翠绿竹纹短打校服，斗笠与回旋镖',sc:'竹林深处，翠竹参天，光影斑驳'},
+{s:'82',c:8,n:'风林夜猎',t:'月辉',o:'墨绿月纹猎手礼服，银镖月轮，夜色斗笠',sc:'月夜密林，银色回旋镖划过月光轨迹'},
+{s:'83',c:8,n:'天风破空',t:'日冕',o:'金绿风神猎装，天风回旋镖，金色翎羽冠',sc:'天空之城废墟，飓风席卷云海，金色镖穿透天际'},
+/* === 风清扬(9) 风语者 === */
+{s:'91',c:9,n:'青冥剑仙',t:'星耀',o:'青色仙袍大袖，凌云长剑，仙气缥缈',sc:'云端仙山，青松苍翠，云雾缭绕'},
+{s:'92',c:9,n:'御风谪仙',t:'月辉',o:'银青月纹仙袍，御风剑，月光仙冠',sc:'月下万丈悬崖，银色风刃凌空而立，仙气浩荡'},
+{s:'93',c:9,n:'九天风神',t:'日冕',o:'金青风神帝袍，九天风剑，风神之冠',sc:'九天之上，万刃风墙环绕的天宫，恢宏无垠'},
+/* === 鱼俱浪(10) 叉兵 === */
+{s:'101',c:10,n:'钱塘水君',t:'星耀',o:'深蓝浪纹铠甲校服，三叉戟寒光，浪头披风',sc:'钱塘江畔，怒潮拍岸，浪花飞溅'},
+{s:'102',c:10,n:'沧海龙骑',t:'月辉',o:'银蓝龙纹海将礼服，龙戟，月光浪甲',sc:'月夜沧海，巨浪如龙，月光铺满海面'},
+{s:'103',c:10,n:'四海龙王',t:'日冕',o:'金蓝龙王神甲，定海神戟，龙君披风',sc:'深海龙宫，万丈水柱冲天，珊瑚宝殿辉煌壮丽'},
+/* === 叶灵枢(11) 医仙 === */
+{s:'111',c:11,n:'杏林仙子',t:'星耀',o:'淡绿百花仙裙，药葫芦与柳枝，治愈柔光',sc:'春日药圃，百花盛开，暖阳柔风'},
+{s:'112',c:11,n:'月华医圣',t:'月辉',o:'银绿月华仙裙，月光药鼎，星辉柳枝',sc:'月光下的仙药园，银色灵草发光，药香弥漫'},
+{s:'113',c:11,n:'神农传人',t:'日冕',o:'金绿神农神袍，百草药冠，生命之鼎',sc:'远古百草圣殿，万种灵药金光绽放，生命之树参天'},
+/* === 夜无踪(12) 刺客 === */
+{s:'121',c:12,n:'影杀夜衣',t:'星耀',o:'纯黑鎏金夜行衣，狐面吊坠，暗紫披风',sc:'暗夜屋脊，月光如刀，影影绰绰'},
+{s:'122',c:12,n:'月影修罗',t:'月辉',o:'黑银月影刺客礼服，银狐面具，月光短刃',sc:'月下古都屋顶，银色残影穿梭，杀意如霜'},
+{s:'123',c:12,n:'暗夜君王',t:'日冕',o:'金黑暗夜君王袍，修罗面具，万影之刃',sc:'深渊暗域，万千影子汇聚成王座，幽冥壮森'},
+/* === 剑南春(13) 剑客 === */
+{s:'131',c:13,n:'醉里剑歌',t:'星耀',o:'月白绣剑长衫，酒葫芦挂件，落英满身',sc:'桃花林中，落英缤纷，剑气如虹'},
+{s:'132',c:13,n:'青莲剑仙',t:'月辉',o:'银白青莲剑仙礼服，月华长剑，莲华披风',sc:'月下莲池，万千莲瓣飞舞，剑光映月'},
+{s:'133',c:13,n:'万剑归宗',t:'日冕',o:'金白剑神帝袍，万剑之冠，归宗神剑',sc:'万剑山巅，无数长剑矗立如林，剑气冲霄壮丽'},
+/* === 白小绾(14) 召唤师 === */
+{s:'141',c:14,n:'纸偶巫女',t:'星耀',o:'红白巫女风国风校服，纸偶环绕，符纸发饰',sc:'神社鸟居下，纸鹤飞舞，符纸纷飞'},
+{s:'142',c:14,n:'百鬼夜行',t:'月辉',o:'银紫百鬼巫女礼服，月光符阵，灵纸飘扬',sc:'月夜百鬼祭典，万只纸灵浮游，幽光闪耀'},
+{s:'143',c:14,n:'万灵御主',t:'日冕',o:'金紫万灵御主神袍，灵冠法阵，万纸兵',sc:'灵界万灵殿，无数式神环绕飞舞，灵光万丈辉煌'},
+/* === 青萝(15) 毒师 === */
+{s:'151',c:15,n:'五毒苗裳',t:'星耀',o:'苗银叮当的翠绿毒师长裙，蛊虫纹样',sc:'苗寨竹林，银饰叮当，翠色迷雾'},
+{s:'152',c:15,n:'月蛊仙子',t:'月辉',o:'银绿月蛊仙裙，月光蛊阵，银蛇环绕',sc:'月夜毒谷，银色毒雾弥漫，蛊虫如星'},
+{s:'153',c:15,n:'万毒天女',t:'日冕',o:'金绿万毒天女神袍，毒凤冠，万蛊法阵',sc:'远古万毒圣域，万种毒物朝拜，碧绿金光交织'},
+/* === 柳如烟(16) 乐师 === */
+{s:'161',c:16,n:'秦淮画舫',t:'星耀',o:'烟粉织金琵琶仕女服，轻纱披帛，水墨舫影',sc:'秦淮河上，画舫灯影，水波涟漪'},
+{s:'162',c:16,n:'月下仙音',t:'月辉',o:'银粉月纹仙乐礼服，月光琵琶，银色音波',sc:'月夜湖心亭，银色音波化作花瓣飘散'},
+{s:'163',c:16,n:'天音神女',t:'日冕',o:'金粉天音神女华袍，天琵琶，万音法冠',sc:'天音宫阙，万道音波化作金莲绽放，仙乐飘飘'},
+/* === 文曲(17) 书生 === */
+{s:'171',c:17,n:'翰林书童',t:'星耀',o:'青色襕衫书童服，簪笔与书卷，清雅',sc:'翰林书院，竹简堆积，墨香四溢'},
+{s:'172',c:17,n:'月下书仙',t:'月辉',o:'银青月纹书仙礼服，月光笔，星辉书卷',sc:'月光下的藏书阁，银色文字飘浮空中'},
+{s:'173',c:17,n:'文曲星君',t:'日冕',o:'金青文曲星君神袍，文笔星冠，天书法卷',sc:'天庭文殿，万卷天书环绕，金色文字化作星河'},
+/* === 墨丹青(18) 画师 === */
+{s:'181',c:18,n:'泼墨山人',t:'星耀',o:'墨色山水纹宽袖汉服，画笔为簪',sc:'山水之间，水墨丹青化境，墨色云烟'},
+{s:'182',c:18,n:'月华画仙',t:'月辉',o:'银墨月华画仙礼服，月光画笔，星墨飘洒',sc:'月夜画廊，画中世界与月色交融，墨星飞舞'},
+{s:'183',c:18,n:'天地画师',t:'日冕',o:'金墨天地画神帝袍，造化之笔，万象画卷',sc:'天地画卷之中，山川河流从画笔涌出，壮阔无垠'},
+/* === 弈秋(19) 棋手 === */
+{s:'191',c:19,n:'国手棋师',t:'星耀',o:'黑白阴阳纹棋师长袍，白玉棋子冠',sc:'棋室对弈，黑白棋盘悬浮，棋子如星'},
+{s:'192',c:19,n:'星罗棋仙',t:'月辉',o:'银黑白棋仙礼服，月光棋盘，星子棋冠',sc:'月下星空棋局，星辰化作棋子，银河为盘'},
+{s:'193',c:19,n:'天元圣手',t:'日冕',o:'金黑白天元圣手神袍，天元棋冠，万象棋盘',sc:'天元圣殿，宇宙星辰为棋盘，万物为子，恢弘至极'},
+/* === 玄都(20) 道士 === */
+{s:'201',c:20,n:'天师道袍',t:'星耀',o:'明黄桃木符文天师道袍，拂尘与法剑',sc:'道观清修，符箓飞舞，香烟缭绕'},
+{s:'202',c:20,n:'月华天师',t:'月辉',o:'银黄月华天师礼服，月光法剑，星符阵',sc:'月夜道坛，月光法阵展开，星符环绕'},
+{s:'203',c:20,n:'五雷天师',t:'日冕',o:'金黄五雷天师神袍，天雷法剑，万符法冠',sc:'天师圣殿，五雷法阵轰鸣，万道金符冲天而起'},
+/* === 释无尘(21) 武僧 === */
+{s:'211',c:21,n:'金身罗汉',t:'星耀',o:'赤金纹袈裟武僧服，青铜佛珠，怒目金身',sc:'古寺大殿，佛像金光，梵音回荡'},
+{s:'212',c:21,n:'月明禅师',t:'月辉',o:'金白银纹禅师礼服，月光佛珠，银色袈裟',sc:'月夜古寺，月光穿过佛殿，金身映银辉'},
+{s:'213',c:21,n:'万佛金身',t:'日冕',o:'金赤万佛金身神甲，罗汉法冠，万佛珠',sc:'万佛金殿，无数金佛环绕，佛光万丈普照'},
+/* === 花想容(22) 园丁 === */
+{s:'221',c:22,n:'十二花神',t:'星耀',o:'百花织锦花神襦裙，花环与荆棘藤蔓',sc:'春日花园，百花齐放，蝶舞蜂飞'},
+{s:'222',c:22,n:'月下花仙',t:'月辉',o:'银粉月华花仙礼服，月光花冠，银色花瓣',sc:'月夜花园，银色月光下百花齐放，花瓣如雪'},
+{s:'223',c:22,n:'万花神女',t:'日冕',o:'金粉万花神女华袍，百花神冠，万花法杖',sc:'万花圣域，巨花盛开如树，花瓣金光纷飞，绝美壮丽'},
+/* === 庖丁(23) 厨师 === */
+{s:'231',c:23,n:'灶神小厨',t:'星耀',o:'喜庆红白色厨神围裙装，热面蒸汽',sc:'热闹厨房，灶火旺盛，蒸汽升腾'},
+{s:'232',c:23,n:'月华厨神',t:'月辉',o:'银白月华厨神礼服，月光菜刀，银色蒸汽',sc:'月夜御膳房，银色月光洒下，料理发光'},
+{s:'233',c:23,n:'五味灶神',t:'日冕',o:'金红五味灶神神袍，金锅法冠，五味神兵',sc:'灶神天宫，五味化为五色神光，金鼎烹天，恢弘壮观'},
+/* === 墨小机(24) 机关师 === */
+{s:'241',c:24,n:'偃师机巧',t:'星耀',o:'青铜墨纹偃师机关服，悬浮小型机关鸢',sc:'机关工坊，齿轮转动，铜鸦飞旋'},
+{s:'242',c:24,n:'月机星匠',t:'月辉',o:'银青月机星匠礼服，月光齿轮，星轨机关',sc:'月夜高塔，银色齿轮星轨运转，月光机关鸢盘旋'},
+{s:'243',c:24,n:'天机百巧',t:'日冕',o:'金铜天机百巧神甲，万机之冠，天工鸢',sc:'天机圣殿，无数巨型机关运转，铜鸦金鸢蔽天飞舞'},
+/* === 霍奔(25) 运动员 === */
+{s:'251',c:25,n:'逐日少年',t:'星耀',o:'金红田径国风运动服，鎏金发带',sc:'校运赛道，阳光灿烂，红旗飘扬'},
+{s:'252',c:25,n:'月华飞毛',t:'月辉',o:'银金月华飞毛腿礼服，月光跑鞋，银色残影',sc:'月夜长城之巅，银色残影掠过，月光铺路'},
+{s:'253',c:25,n:'逐日神行',t:'日冕',o:'金红逐日神行神甲，追风腿冠，金色疾光',sc:'远古逐日之途，金色光芒铺成跑道，追日而行壮阔无边'},
+/* === 公孙舞(26) 舞姬 === */
+{s:'261',c:26,n:'霓裳羽衣',t:'星耀',o:'端庄华丽的七彩霓裳羽衣广袖长裙，孔雀翎扇，惊艳而不暴露',sc:'宫殿舞台，花瓣纷飞，彩绸飘舞'},
+{s:'262',c:26,n:'月华舞神',t:'月辉',o:'银粉月华舞神礼服，月光水袖，银色花雨',sc:'月夜高台，银色水袖舞动如月华，花瓣化光'},
+{s:'263',c:26,n:'天女散花',t:'日冕',o:'金粉天女散花神袍，百花天冠，金色彩练',sc:'天界花园，万花从天而降，金色彩练漫天飞舞，绝美恢弘'},
+/* === 闻人晓(27) 记者 === */
+{s:'271',c:27,n:'金牌记者',t:'星耀',o:'卡其色侦探风衣式校服，金笔记者证',sc:'新闻社办公室，报纸纷飞，打字机声'},
+{s:'272',c:27,n:'月瞳探秘',t:'月辉',o:'银蓝月瞳侦探礼服，月光相机，银色镜头',sc:'月夜调查现场，银色闪光灯照亮暗巷，月光线索'},
+{s:'273',c:27,n:'千里眼神',t:'日冕',o:'金蓝千里眼神帝袍，金镜头冠，万卷报库',sc:'天眼新闻殿，万面屏幕悬浮，信息金光流转，恢弘壮丽'},
+/* === 藏海(28) 图书管理员 === */
+{s:'281',c:28,n:'司书先生',t:'星耀',o:'靛蓝复古图书馆司书服，银链眼镜',sc:'古老图书馆，书架高耸入云，墨香沉静'},
+{s:'282',c:28,n:'月读司书',t:'月辉',o:'银靛月读司书礼服，月光书典，银色书灯',sc:'月夜万卷阁，银色文字飘浮，月光照亮万丈书海'},
+{s:'283',c:28,n:'无字天藏',t:'日冕',o:'金靛无字天藏神袍，天书法冠，万卷飞典',sc:'天藏圣殿，万卷天书环绕飞舞，金色文字化作星河，恢宏壮阔'},
+/* === 袁天罡(29) 风水师 === */
+{s:'291',c:29,n:'钦天监正',t:'星耀',o:'星官紫袍钦天监礼服，浑天仪法杖，星空披风',sc:'钦天监观星台，浑天仪旋转，星图铺展'},
+{s:'292',c:29,n:'月华星师',t:'月辉',o:'银紫月华星师礼服，月光罗盘，星辉法杖',sc:'月夜观星台，银色星图铺满天空，月光罗盘指引乾坤'},
+{s:'293',c:29,n:'天机星君',t:'日冕',o:'金紫天机星君神袍，星冠法服，万星罗盘',sc:'天机星殿，宇宙星图环绕，万星罗盘转动天地，恢宏无极'},
+/* === 狄仁杰(30) 侦探 === */
+{s:'301',c:30,n:'神探宰辅',t:'星耀',o:'焦糖色唐风衣宰辅礼服，金龙暗纹，虎目神探',sc:'大理寺公堂，卷宗堆积，正气凛然'},
+{s:'302',c:30,n:'月明神探',t:'月辉',o:'银棕月明神探礼服，月光放大镜，银色卷宗',sc:'月夜案发现场，银色月光照亮线索，推理之光闪烁'},
+{s:'303',c:30,n:'天眼明判',t:'日冕',o:'金棕天眼明判神袍，天眼法冠，万象判决',sc:'天判圣殿，天眼法镜映照万物真相，金色判词冲天，恢弘庄严'},
 ];
-const SKIN_BY_ID = Object.fromEntries(SKINS.map(s=>[s.id,s]));
-const RATE_TABLE=[['N',.60],['R',.28],['SR',.09],['SSR',.025],['UR',.005]];
+const SKINS_DATA=SKINS.map(s=>({id:s.s,char:s.c,name:s.n,tier:s.t,out:s.o,scene:s.sc}));
+const SKIN_BY_ID=Object.fromEntries(SKINS_DATA.map(s=>[s.id,s]));
+const RATE_TABLE=[['星耀',.65],['月辉',.28],['日冕',.07]];
 
 /* ---------------- 敌人（老师） ----------------
    hp/atk 为 D/C/B/A/S 五维基准，随关卡成长 */
@@ -658,6 +789,9 @@ function charPortraitPrompt(c){
   const sk=save.equipped[c.id];
   return sk ? (SKIN_BY_ID[sk].out+'，'+c.pic) : c.pic;
 }
+function skinScenePrompt(s,c){
+  return s.out+'，'+c.pic+'，背景场景：'+s.scene;
+}
 
 /* ---------------- 关卡地图 ---------------- */
 function openMap(){
@@ -697,7 +831,7 @@ function openCodex(){
 }
 function skinRarityOf(c){
   const sk=save.equipped[c.id];
-  return sk?SKIN_BY_ID[sk].rarity:null;
+  return sk?SKIN_BY_ID[sk].tier:null;
 }
 function statBar(label,val,max){
   return `<div class="statbar"><span style="width:44px">${label}</span>
@@ -705,14 +839,14 @@ function statBar(label,val,max){
 }
 function showCharDetail(id){
   const c=CHAR_BY_ID[id];
-  const mySkins=SKINS.filter(s=>s.char===id);
+  const mySkins=SKINS_DATA.filter(s=>s.char===id);
   let skinsHtml='';
   mySkins.forEach(s=>{
     const owned=save.skins.includes(s.id);
     const sel=save.equipped[id]===s.id;
-    skinsHtml+=`<div class="skin-chip rarity-${s.rarity} ${sel?'sel':''}" onclick="${owned?`equipSkin('${s.id}')`:`toast('未拥有该换装')`}">
-      <div class="pic">${owned?imgHTML(s.out+'，'+c.pic,c.emo):'<span class="picfb" style="font-size:26px">🔒<br></span>'}</div>
-      <div class="sn">${owned?s.name:'？？？'}<br><b style="color:var(--rc)">${s.rarity}</b></div></div>`;
+    skinsHtml+=`<div class="skin-chip rarity-${s.tier} ${sel?'sel':''}" onclick="${owned?`equipSkin('${s.id}')`:`toast('未拥有该换装')`}">
+      <div class="pic">${owned?imgHTML(skinScenePrompt(s,c),c.emo):'<span class="picfb" style="font-size:26px">🔒<br></span>'}</div>
+      <div class="sn">${owned?s.name:'？？？'}<br><b style="color:var(--rc)">${TIER[s.tier].star}</b></div></div>`;
   });
   // 默认立绘选项
   const defaultSel=!save.equipped[id]?'sel':'';
@@ -758,12 +892,12 @@ function openGacha(){
   showScreen('gacha');
   $('gachaStars').textContent=save.starWords;
   const pool=$('skinPool'); pool.innerHTML='';
-  SKINS.forEach(s=>{
+  SKINS_DATA.forEach(s=>{
     const c=CHAR_BY_ID[s.char], owned=save.skins.includes(s.id);
     const d=document.createElement('div');
-    d.className='skin-card rarity-'+s.rarity;
-    d.innerHTML=`<div class="pic"><span class="r-badge">${s.rarity}</span>
-      ${imgHTML(s.out+'，'+c.pic,c.emo)}</div>
+    d.className='skin-card rarity-'+s.tier;
+    d.innerHTML=`<div class="pic"><span class="r-badge">${TIER[s.tier].star}</span>
+      ${imgHTML(skinScenePrompt(s,c),c.emo)}</div>
       <div class="info"><div class="rname">${c.name} · ${s.name}</div>
       <div class="own">${owned?'✅ 已拥有':'未获得'}</div></div>`;
     pool.appendChild(d);
@@ -773,7 +907,7 @@ function openGacha(){
 function pickRarity(){
   let r=Math.random();
   for(const [name,p] of RATE_TABLE){r-=p; if(r<=0)return name;}
-  return 'N';
+  return '星耀';
 }
 function drawGacha(times){
   const cost=times===1?100:900;
@@ -782,7 +916,7 @@ function drawGacha(times){
   const got=[];
   for(let i=0;i<times;i++){
     const rar=pickRarity();
-    const pool=SKINS.filter(s=>s.rarity===rar);
+    const pool=SKINS_DATA.filter(s=>s.tier===rar);
     const s=pool[Math.floor(Math.random()*pool.length)];
     if(save.skins.includes(s.id)){save.starWords+=50; got.push({s,dup:true});}
     else{save.skins.push(s.id); got.push({s,dup:false});}
@@ -792,14 +926,87 @@ function drawGacha(times){
   got.forEach(({s,dup})=>{
     const c=CHAR_BY_ID[s.char];
     const d=document.createElement('div');
-    d.className='skin-card rarity-'+s.rarity+(dup?'':' new');
-    d.innerHTML=`<div class="pic"><span class="r-badge">${s.rarity}</span>
-      ${imgHTML(s.out+'，'+c.pic,c.emo)}</div>
+    d.className='skin-card rarity-'+s.tier+(dup?'':' new');
+    d.innerHTML=`<div class="pic"><span class="r-badge">${TIER[s.tier].star}</span>
+      ${imgHTML(skinScenePrompt(s,c),c.emo)}</div>
       <div class="info"><div class="rname">${c.name} · ${s.name}</div>
       <div class="own">${dup?'重复 → 转化 50 星语':'✨ 新换装获得！'}</div></div>`;
     box.appendChild(d);
   });
   box.scrollIntoView({behavior:'smooth',block:'nearest'});
+  // 开场动画
+  showGachaAnimation(got);
+}
+/* === 抽卡开场动画 === */
+function showGachaAnimation(got){
+  const ov=$('gachaOverlay'), reveal=$('gachaReveal'), bg=$('gachaBgScene');
+  const rays=$('gachaRays'), parts=$('gachaParticles'), skip=$('gachaSkip');
+  let idx=0;
+  function showOne(){
+    if(idx>=got.length){ov.classList.remove('show');return;}
+    const {s,dup}=got[idx];
+    const c=CHAR_BY_ID[s.char];
+    const tcfg=TIER[s.tier];
+    // 重置
+    ov.className='gacha-overlay show tier-'+s.tier;
+    reveal.className='gacha-reveal';
+    bg.className='gacha-bg-scene';
+    rays.innerHTML=''; parts.innerHTML='';
+    // 背景场景
+    const bgUrl=portraitURL('宏伟场景：'+s.scene+'，'+s.out+'，背景插画，壮丽远景');
+    bg.style.backgroundImage=`url("${bgUrl}")`;
+    getImg(bgUrl);
+    // 光效
+    setTimeout(()=>bg.classList.add('show'),100);
+    // 粒子
+    const pc=s.tier==='日冕'?40:s.tier==='月辉'?25:12;
+    for(let i=0;i<pc;i++){
+      const p=document.createElement('div');
+      p.className='gacha-particle';
+      const sz=4+Math.random()*8;
+      p.style.width=sz+'px';p.style.height=sz+'px';
+      p.style.background=tcfg.glow;
+      p.style.left=(50+ (Math.random()-.5)*60)+'%';
+      p.style.top=(50+ (Math.random()-.5)*60)+'%';
+      p.style.opacity=.3+Math.random()*.5;
+      p.style.transition='all 1.2s ease-out';
+      parts.appendChild(p);
+      setTimeout(()=>{
+        p.style.left=(50+ (Math.random()-.5)*100)+'%';
+        p.style.top=(50+ (Math.random()-.5)*100)+'%';
+        p.style.opacity=0;
+      },50+i*20);
+    }
+    // 日冕光束
+    if(s.tier==='日冕'){
+      for(let i=0;i<12;i++){
+        const r=document.createElement('div');
+        r.className='gacha-ray';
+        r.style.transform=`rotate(${i*30}deg)`;
+        r.style.background='linear-gradient(to bottom,transparent,${tcfg.glow})';
+        rays.appendChild(r);
+        setTimeout(()=>{r.style.height='120vh';},100);
+      }
+    }
+    // 揭示
+    setTimeout(()=>{
+      const portraitUrl=portraitURL(skinScenePrompt(s,c));
+      getImg(portraitUrl);
+      reveal.innerHTML=`<div class="portrait" style="border-color:${tcfg.color};box-shadow:0 0 60px ${tcfg.glow}">
+        <img src="${portraitUrl}" onload="retryPic(this)" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+        <div class="placeholder" style="display:none">${c.emo}</div></div>
+        <div class="tier-badge" style="background:${tcfg.color};color:#1a0a2a">${tcfg.star} ${s.tier} ${tcfg.star}</div>
+        <div class="char-name">${c.name} · ${c.cls}</div>
+        <div class="skin-name">${s.name}</div>
+        <div class="scene-desc">${s.scene}</div>
+        ${dup?'<div style="color:#ff9;padding:4px">（重复 · 转化50星语）</div>':'<div style="color:#6f6;padding:4px">✨ 新换装获得！</div>'}`;
+      reveal.classList.add('show');
+    }, s.tier==='日冕'?700:s.tier==='月辉'?500:300);
+    skip.onclick=()=>{idx++;showOne();};
+    // 自动跳转
+    setTimeout(()=>{idx++;showOne();},s.tier==='日冕'?4500:s.tier==='月辉'?3500:2500);
+  }
+  showOne();
 }
 
 /* ============================================================
